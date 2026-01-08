@@ -1,0 +1,54 @@
+{
+  "name": "assurit-test-simulator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Assurit Test Simulator - CMMC Exam Preparation",
+  "author": "GRCJP",
+  "license": "MIT",
+  "homepage": "https://grcjp.github.io/assurit-test-simulator",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GRCJP/assurit-test-simulator.git"
+  },
+  "keywords": ["assurit", "cmmc", "exam", "preparation", "test", "simulator", "cybersecurity"],
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "scripts": {
+    "backup:questions": "node Archive/scripts/backup_questions.mjs",
+    "watch:questions:backup": "node Archive/scripts/watch_questions_backup.mjs",
+    "dev": "vite",
+    "build": "vite build",
+    "build:github": "npm ci --production=false && npm run build",
+    "lint": "eslint src --max-warnings=0",
+    "preview": "vite preview",
+    "deploy:github": "npm run build && git add dist && git commit -m 'Deploy to GitHub Pages' && git subtree push --prefix dist origin gh-pages",
+    "verify:safety": "./scripts/verify-safety.sh",
+    "protect:baseline": "./scripts/protect-baseline.sh",
+    "pre-commit": "npm run lint && npm run protect:baseline"
+  },
+  "dependencies": {
+    "lucide-react": "^0.560.0",
+    "@auth0/auth0-react": "^2.4.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-legacy": "^7.2.1",
+    "@vitejs/plugin-react": "^5.1.1",
+    "autoprefixer": "^10.4.22",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.13",
+    "terser": "^5.44.0",
+    "vite": "^7.2.4"
+  }
+}
