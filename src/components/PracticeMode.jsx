@@ -68,18 +68,14 @@ const PracticeMode = ({ questions }) => {
 
   // Only shuffle when question ID actually changes
   if (currentQuestion?.id !== lastQuestionIdRef.current) {
-    console.log('🔀 PracticeMode - NEW QUESTION detected, shuffling choices for:', currentQuestion?.id);
     lastQuestionIdRef.current = currentQuestion?.id;
     shuffledChoicesRef.current = currentQuestion?.choices ? shuffleChoices(currentQuestion.choices) : [];
-  } else {
-    console.log('🔀 PracticeMode - Same question, using cached shuffled choices');
   }
 
   const shuffledChoices = shuffledChoicesRef.current;
 
   const handleSelectChoice = (choiceId, isCorrect) => {
     if (!currentQuestion) {
-      console.error('Cannot select choice: no current question');
       return;
     }
     

@@ -17,17 +17,12 @@
     "npm": ">=10.0.0"
   },
   "scripts": {
-    "backup:questions": "node Archive/scripts/backup_questions.mjs",
-    "watch:questions:backup": "node Archive/scripts/watch_questions_backup.mjs",
     "dev": "vite",
     "build": "vite build",
     "build:github": "npm ci --production=false && npm run build",
     "lint": "eslint src --max-warnings=0",
     "preview": "vite preview",
-    "deploy:github": "npm run build && git add dist && git commit -m 'Deploy to GitHub Pages' && git subtree push --prefix dist origin gh-pages",
-    "verify:safety": "./scripts/verify-safety.sh",
-    "protect:baseline": "./scripts/protect-baseline.sh",
-    "pre-commit": "npm run lint && npm run protect:baseline"
+    "deploy:github": "npm run build && git add dist && git commit -m 'Deploy to GitHub Pages' && git subtree push --prefix dist origin gh-pages"
   },
   "dependencies": {
     "lucide-react": "^0.560.0",

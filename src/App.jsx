@@ -20,7 +20,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 import questionsCCP from '../data/questions_ccp_combined.json';
 import questionsCCA from '../data/questions_cca.json';
 
-import TestComponent from './components/TestComponent';
 import { isKindleDevice, shouldShowKindleMode } from './utils/deviceDetection';
 
 // Navigation component
@@ -41,23 +40,6 @@ const Navigation = ({ onLogout }) => {
     questionBankId === 'bankCCA' ? questionsCCA : 
     questionsCCP
   ) : [];
-
-  // Debug: Log actual domains from loaded questions
-  React.useEffect(() => {
-    if (questions && questions.length > 0) {
-      const actualDomains = [...new Set(questions.map(q => q.domain).filter(Boolean))];
-      console.log('🔍 Question Bank Debug:', {
-        questionBankId,
-        totalQuestions: questions.length,
-        actualDomains: actualDomains.sort(),
-        domainCounts: actualDomains.reduce((acc, domain) => {
-          acc[domain] = questions.filter(q => q.domain === domain).length;
-          return acc;
-        }, {}),
-        sampleQuestion: questions[0]
-      });
-    }
-  }, [questions, questionBankId]);
 
   // Handle Kindle mode toggle
   const toggleKindleMode = () => {
@@ -509,12 +491,7 @@ function AppContent({ userEmail, onLogout }) {
               {mode === 'dashboard' && <Dashboard questions={questions} />}
               {mode === 'dailyDrills' && <DailyDrills questions={questions} />}
               {mode === 'domainPractice' && <DomainPractice questions={questions} />}
-              {mode === 'simulated' && (
-                (() => {
-                console.log('🔥 RENDERING SIMULATED TEST! Mode:', mode);
-                return <SimulatedTest questions={questions} />;
-              })()
-            )}
+              {mode === 'simulated' && <SimulatedTest questions={questions} />}
             {mode === 'studyPlanner' && <StudyPlanner />}
             {mode === 'performance' && (
               <ComprehensiveProgress 
