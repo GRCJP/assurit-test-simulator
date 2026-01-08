@@ -91,7 +91,7 @@ const ComprehensiveProgress = ({
       const domainQuestions = questions.filter(q => q.domain === domain);
       const masteryData = domainMastery?.levels?.[domain];
       
-      const masteryPercentage = masteryData ? Math.round((masteryData.masteryLevel || 0.5) * 100) : 50;
+      const masteryPercentage = masteryData && attempts > 0 ? Math.round((masteryData.masteryLevel || 0.5) * 100) : 0;
       const attempts = masteryData?.attempts || 0;
       const correct = masteryData?.correct || 0;
       
