@@ -121,12 +121,12 @@ const RapidMemory = ({ questions }) => {
                 >
                   <div className={`font-medium ${textSize === 'sm' ? 'text-sm' : textSize === 'lg' ? 'text-lg' : textSize === 'xl' ? 'text-xl' : ''} ${
                     choice.correct 
-                      ? 'text-green-700 dark:text-green-400' 
+                      ? 'text-green-900 dark:text-green-400' 
                       : darkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
                     {choice.id}. {choice.text}
                     {choice.correct && (
-                      <span className="ml-2 text-sm font-medium text-green-700 dark:text-green-400">
+                      <span className="ml-2 text-sm font-medium text-green-900 dark:text-green-400">
                         ✓ Correct
                       </span>
                     )}

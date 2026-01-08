@@ -1375,10 +1375,10 @@ const DailyDrills = ({ questions }) => {
                   currentAnswer.isCorrect !== null
                     ? currentAnswer.selectedChoiceId === choice.id
                       ? choice.correct
-                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-green-50 border-green-500 text-green-800'
+                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-green-50 border-green-500 text-green-900'
                         : darkMode ? 'bg-red-600/20 border-red-500 text-red-400' : 'bg-red-50 border-red-500 text-red-700'
                       : choice.correct
-                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-green-50 border-green-500 text-green-800'
+                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-green-50 border-green-500 text-green-900'
                         : darkMode ? 'bg-slate-700 border-slate-600 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-700'
                     : darkMode 
                       ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500' 

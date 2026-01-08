@@ -705,7 +705,7 @@ const SimulatedTest = ({ questions }) => {
                               isCorrectAnswer
                                 ? darkMode 
                                   ? 'bg-green-600/20 border-green-500 text-green-400' 
-                                  : 'bg-green-50 border-green-500 text-green-800'
+                                  : 'bg-green-50 border-green-500 text-green-900'
                                 : isSelected
                                 ? darkMode 
                                   ? 'bg-red-600/20 border-red-500 text-red-400' 
