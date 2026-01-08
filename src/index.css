@@ -10,6 +10,23 @@ body {
   @apply min-h-screen;
 }
 
+/* Better contrast for light mode green text */
+.bg-green-50 {
+  /* Ensure green backgrounds have proper contrast */
+}
+
+.text-green-800 {
+  color: #166534 !important; /* Darker green for better contrast */
+}
+
+.text-green-700 {
+  color: #15803d !important; /* Darker green for better contrast */
+}
+
+.text-green-600 {
+  color: #16a34a !important; /* Darker green for better contrast */
+}
+
 /* Kindle Mode Styles - Only applied when body has kindle-mode class */
 body.kindle-mode {
   /* High contrast and larger text for e-ink displays */

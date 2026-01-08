@@ -310,13 +310,13 @@ const PracticeMode = ({ questions }) => {
               }`}>
                 <div className="flex items-center mb-2">
                   {currentAnswer.isCorrect ? (
-                    <CheckCircle className="text-green-600 dark:text-green-400 mr-2" size={20} />
+                    <CheckCircle className="text-green-700 dark:text-green-400 mr-2" size={20} />
                   ) : (
                     <XCircle className="text-red-600 dark:text-red-400 mr-2" size={20} />
                   )}
                   <span className={`font-semibold ${
                     currentAnswer.isCorrect
-                      ? 'text-green-800 dark:text-green-200'
+                      ? 'text-green-900 dark:text-green-200'
                       : 'text-red-800 dark:text-red-200'
                   }`}>
                     {currentAnswer.isCorrect ? 'Correct!' : 'Incorrect'}
