@@ -11,10 +11,6 @@ body {
 }
 
 /* Better contrast for light mode green text */
-.bg-green-50 {
-  /* Ensure green backgrounds have proper contrast */
-}
-
 .text-green-800 {
   color: #166534 !important; /* Darker green for better contrast */
 }
