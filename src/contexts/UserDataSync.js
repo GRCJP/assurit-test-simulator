@@ -222,6 +222,9 @@ class UserDataSync {
     return this.handleApiCall(async () => {
       // Try to get token with proper audience
       try {
+        console.log('🔑 Attempting to get Management API token...');
+        console.log('🔑 Using audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
+        
         const token = await getAccessTokenSilently({
           authorizationParams: {
             audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://dev-351wds1ubpw3eyut.us.auth0.com/api/v2/',
@@ -233,11 +236,17 @@ class UserDataSync {
           throw new Error('No token received from getAccessTokenSilently');
         }
         
+        console.log('✅ Management API token received successfully');
+        console.log('🔑 Token length:', token.length);
+        console.log('🔑 Token starts with:', token.substring(0, 20) + '...');
+        
         // Reset failure count on success
         this.managementApiFailureCount = 0;
         return token;
       } catch (error) {
         this.managementApiFailureCount++;
+        console.error('❌ Management API token failed:', error.message);
+        console.error('❌ Full error:', error);
         
         // If we've had too many failures, disable the Management API entirely
         if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
@@ -252,6 +261,7 @@ class UserDataSync {
         console.warn(`⚠️ Management API token failed (${this.managementApiFailureCount}/${this.maxManagementApiFailures}): ${error.message}`);
         console.log('💾 Skipping fallback token attempt - Management API requires specific audience');
         console.log('💾 Falling back to localStorage for this request');
+        console.log('💾 This usually means the Auth0 application needs Management API permissions configured');
         return null;
       }
     }, 'getManagementApiToken');
