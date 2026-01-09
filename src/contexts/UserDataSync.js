@@ -1,27 +1,23 @@
 /**
  * User Data Synchronization Service
- * Handles cross-device synchronization of user progress data using Auth0 user metadata
- * Includes comprehensive error handling and monitoring to prevent token issues
+ * Handles cross-device synchronization of user progress data using PostgreSQL backend via Supabase
+ * Includes comprehensive error handling and monitoring to prevent database issues
  */
 
+import { supabase, updateUserData, getUserData } from '../lib/supabase.js';
+
+/**
+ * Enhanced UserDataSync with PostgreSQL backend via Supabase
+ * Replaces Auth0 Management API with reliable database storage
+ */
 class UserDataSync {
   constructor() {
     this.cache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
-    this.pendingUpdates = new Map();
-    this.updateTimeout = null;
-    this.errorCount = 0;
-    this.maxRetries = 3;
     this.lastSuccessfulSync = null;
-    this.isHealthy = true;
-    this.batchTimeout = null;
-    this.syncQueue = [];
-    this.isProcessing = false;
-    this.lastSyncTime = null;
-    this.minSyncInterval = 5000; // Minimum 5 seconds between syncs
-    this.managementApiAvailable = true; // Track if Management API is available
-    this.managementApiFailureCount = 0;
-    this.maxManagementApiFailures = 3; // Disable after 3 failures
+    this.errorCount = 0;
+    this.maxErrors = 5;
+    this.postgresAvailable = true;
   }
 
   // Monitor system health and detect issues early
@@ -207,55 +203,6 @@ class UserDataSync {
     return true;
   }
 
-  // Get the Auth0 Management API token for user metadata operations
-  async getManagementApiToken(getAccessTokenSilently) {
-    // Check if cloud sync is disabled
-    if (import.meta.env.VITE_DISABLE_CLOUD_SYNC === 'true') {
-      console.log('☁️ Cloud sync disabled via VITE_DISABLE_CLOUD_SYNC flag');
-      return null;
-    }
-
-    // Try a simpler approach - use basic Auth0 token without Management API
-    try {
-      console.log('🔑 Attempting basic Auth0 token for sync...');
-      
-      // Get basic token without special audience or scopes
-      const token = await getAccessTokenSilently({
-        authorizationParams: {
-          scope: 'openid profile email'
-        }
-      });
-      
-      if (!token) {
-        throw new Error('No token received from getAccessTokenSilently');
-      }
-      
-      console.log('✅ Basic Auth0 token received successfully');
-      console.log('🔑 Token length:', token.length);
-      
-      // Mark that we're using basic token approach
-      this.usingBasicToken = true;
-      
-      // Reset failure count on success
-      this.managementApiFailureCount = 0;
-      return token;
-      
-    } catch (error) {
-      this.managementApiFailureCount++;
-      console.error('❌ Basic Auth0 token failed:', error.message);
-      
-      // If we've had too many failures, disable entirely
-      if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
-        console.warn(`🚫 All token methods disabled after ${this.managementApiFailureCount} failures`);
-        this.managementApiAvailable = false;
-        return null;
-      }
-      
-      console.log('💾 Token failed, using localStorage only');
-      return null;
-    }
-  }
-
   // Validate JWT token format
   isValidJwtFormat(token) {
     if (!token || typeof token !== 'string') {
@@ -311,72 +258,17 @@ class UserDataSync {
       // Use Auth0 user.sub as stable identifier
       console.log('🔑 Using Auth0 user.sub as userKey:', userId);
 
-      // RE-ENABLED - Cloud sync now working on GitHub Pages using Auth0 Management API
+      // NEW: PostgreSQL sync via Supabase
       if (window.location.hostname !== 'localhost' && import.meta.env.VITE_DISABLE_CLOUD_SYNC !== 'true') {
         try {
-          // Use Auth0 Management API for cross-device sync
-          const token = await this.getManagementApiToken(getAccessTokenSilently);
+          console.log(`🗄️ Loading ${dataType} from PostgreSQL...`);
           
-          if (!token) {
-            console.log('⚠️ No token available, using localStorage');
-            return this.getFromLocalStorage(bankId, dataType);
-          }
-
-          let cloudData = null;
-
-          // Try Management API first (if we have the right token)
-          if (!this.usingFallbackToken) {
-            try {
-              // Get user metadata from Auth0
-              const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-
-              if (response.ok) {
-                const userData = await response.json();
-                const userMetadata = userData.user_metadata || {};
-                const metadataKey = `cmmc_${bankId}_${dataType}`;
-                cloudData = userMetadata[metadataKey];
-                
-                if (cloudData) {
-                  console.log(`✅ Retrieved ${dataType} from Auth0 Management API`);
-                }
-              }
-            } catch (managementError) {
-              console.warn('⚠️ Management API access failed, trying userinfo endpoint...');
-            }
-          }
-
-          // Fallback: Try userinfo endpoint (limited but may work)
-          if (!cloudData && this.usingFallbackToken) {
-            try {
-              const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/userinfo`, {
-                headers: {
-                  'Authorization': `Bearer ${token}`
-                }
-              });
-
-              if (response.ok) {
-                const userInfo = await response.json();
-                // Check if user metadata is available in userinfo
-                const metadataNamespace = `${import.meta.env.VITE_AUTH0_DOMAIN}/user_metadata`;
-                const userMetadata = userInfo[metadataNamespace] || {};
-                const metadataKey = `cmmc_${bankId}_${dataType}`;
-                cloudData = userMetadata[metadataKey];
-                
-                if (cloudData) {
-                  console.log(`✅ Retrieved ${dataType} from Auth0 userinfo endpoint`);
-                }
-              }
-            } catch (userinfoError) {
-              console.warn('⚠️ Userinfo endpoint access failed:', userinfoError.message);
-            }
-          }
+          // Get data from PostgreSQL via Supabase
+          const cloudData = await getUserData(userId, bankId, dataType);
           
           if (cloudData) {
+            console.log(`✅ Retrieved ${dataType} from PostgreSQL successfully`);
+            
             // Cache the result
             this.cache.set(cacheKey, { data: cloudData, timestamp: Date.now() });
             
@@ -386,13 +278,20 @@ class UserDataSync {
             // Update health tracking
             this.lastSuccessfulSync = Date.now();
             this.errorCount = 0;
+            this.postgresAvailable = true;
             
             return cloudData;
           } else {
-            console.log(`No ${dataType} found in Auth0, using localStorage`);
+            console.log(`No ${dataType} found in PostgreSQL, checking localStorage...`);
           }
-        } catch (functionError) {
-          console.warn('Auth0 sync error:', functionError.message);
+        } catch (postgresError) {
+          this.errorCount++;
+          console.warn('⚠️ PostgreSQL sync error:', postgresError.message);
+          
+          if (this.errorCount >= this.maxErrors) {
+            console.warn('🚫 PostgreSQL disabled due to repeated failures');
+            this.postgresAvailable = false;
+          }
         }
       } else {
         console.log('☁️ Using localStorage for localhost development');
@@ -450,11 +349,9 @@ class UserDataSync {
     return allData;
   }
 
-  // Update user data in GitHub Gist via Netlify Function
+  // Update user data in PostgreSQL via Supabase
   async updateUserData(userId, bankId, dataType, data, getAccessTokenSilently) {
-    const metadataKey = `cmmc_${bankId}_${dataType}`;
-    
-    console.log(`Saving user data to localStorage: ${userId}, ${bankId}, ${dataType}`);
+    console.log(`💾 Saving ${dataType} to PostgreSQL for user: ${userId}`);
     
     try {
       // Use Auth0 user.sub as stable identifier
@@ -463,65 +360,16 @@ class UserDataSync {
       // Save to localStorage immediately as backup
       this.saveToLocalStorage(bankId, dataType, data);
       
-      // RE-ENABLED - Cloud sync now working on GitHub Pages using Auth0 Management API
+      // NEW: PostgreSQL sync via Supabase
       if (window.location.hostname !== 'localhost' && import.meta.env.VITE_DISABLE_CLOUD_SYNC !== 'true') {
         try {
-          // Use Auth0 Management API for cross-device sync
-          const token = await this.getManagementApiToken(getAccessTokenSilently);
+          console.log(`🗄️ Saving ${dataType} to PostgreSQL...`);
           
-          if (!token) {
-            console.log('⚠️ No token available, using localStorage only');
-            return { success: true, dataType, saved: 'localStorage' };
-          }
-
-          // If we're using fallback token, we can't write to Auth0 (userinfo is read-only)
-          if (this.usingFallbackToken) {
-            console.log('⚠️ Using fallback token - cannot save to Auth0, localStorage only');
-            console.log('💾 To enable cloud sync, configure Auth0 Management API permissions');
-            return { success: true, dataType, saved: 'localStorage' };
-          }
-
-          // Try Management API for writing data
-          try {
-            // Get current user metadata first
-            const getResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            });
-
-            if (!getResponse.ok) {
-              console.warn(`⚠️ Management API not accessible for read (${getResponse.status}), using localStorage only`);
-              return { success: true, dataType, saved: 'localStorage' };
-            }
-            
-            const userData = await getResponse.json();
-            const currentMetadata = userData.user_metadata || {};
-            
-            // Update specific data type in metadata
-            const metadataKey = `cmmc_${bankId}_${dataType}`;
-            const updatedMetadata = { ...currentMetadata };
-            updatedMetadata[metadataKey] = data;
-            
-            // Update user metadata
-            const patchResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
-              method: 'PATCH',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                user_metadata: updatedMetadata
-              })
-            });
-
-            if (!patchResponse.ok) {
-              console.warn(`⚠️ Management API not accessible for write (${patchResponse.status}), using localStorage only`);
-              return { success: true, dataType, saved: 'localStorage' };
-            }
-            
-            console.log(`✅ Saved ${dataType} to Auth0 user metadata`);
+          // Save data to PostgreSQL via Supabase
+          const result = await updateUserData(userId, bankId, dataType, data);
+          
+          if (result.success) {
+            console.log(`✅ ${dataType} synced to PostgreSQL successfully`);
             
             // Update cache
             const cacheKey = this.getCacheKey(userId, bankId, dataType);
@@ -533,14 +381,21 @@ class UserDataSync {
             // Update health tracking
             this.lastSuccessfulSync = Date.now();
             this.errorCount = 0;
+            this.postgresAvailable = true;
             
-            return { success: true, dataType, saved: 'auth0-metadata' };
-          } catch (managementError) {
-            console.error('❌ Auth0 Management API sync error:', managementError);
-            console.log('💾 Falling back to localStorage only');
+            return result;
           }
-        } catch (functionError) {
-          console.warn('Auth0 sync error:', functionError.message);
+          
+        } catch (postgresError) {
+          this.errorCount++;
+          console.error('❌ PostgreSQL sync error:', postgresError.message);
+          
+          if (this.errorCount >= this.maxErrors) {
+            console.warn('🚫 PostgreSQL disabled due to repeated failures');
+            this.postgresAvailable = false;
+          }
+          
+          console.log('💾 Falling back to localStorage only');
         }
       } else {
         console.log('☁️ Using localStorage for localhost development');
@@ -552,7 +407,7 @@ class UserDataSync {
       console.error('Error updating user data:', error);
       console.warn('⚠️ Falling back to localStorage only');
       this.saveToLocalStorage(bankId, dataType, data);
-      return { success: true, dataType, saved: 'localStorage', error: error.message };
+      return { success: true, dataType, saved: 'localStorage' };
     }
   }
 

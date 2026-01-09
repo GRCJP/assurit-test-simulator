@@ -11,7 +11,15 @@
     "type": "git",
     "url": "https://github.com/GRCJP/assurit-test-simulator.git"
   },
-  "keywords": ["assurit", "cmmc", "exam", "preparation", "test", "simulator", "cybersecurity"],
+  "keywords": [
+    "assurit",
+    "cmmc",
+    "exam",
+    "preparation",
+    "test",
+    "simulator",
+    "cybersecurity"
+  ],
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
@@ -30,8 +38,9 @@
     "pre-commit": "npm run lint && npm run protect:baseline"
   },
   "dependencies": {
-    "lucide-react": "^0.560.0",
     "@auth0/auth0-react": "^2.4.0",
+    "@supabase/supabase-js": "^2.90.1",
+    "lucide-react": "^0.560.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
