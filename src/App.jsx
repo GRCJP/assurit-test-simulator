@@ -16,7 +16,8 @@ import PracticeMode from './components/PracticeMode';
 import DomainPractice from './components/DomainPractice';
 import ComprehensiveProgress from './components/ComprehensiveProgress';
 import ErrorBoundary from './components/ErrorBoundary';
-import TrainingHub from './components/TrainingHub';
+import MainHub from './components/MainHub';
+import CMMCHub from './components/CMMCHub';
 
 import questionsCCP from '../data/questions_ccp_combined.json';
 import questionsCCA from '../data/questions_cca.json';
@@ -90,12 +91,13 @@ const Navigation = ({ onLogout }) => {
   };
 
   const modeButtons = [
-    { id: 'trainingHub', label: 'Training Hub' },
-    { id: 'dashboard', label: 'CMMC Exam' },
+    { id: 'mainHub', label: 'Training Hub' },
+    { id: 'cmmcHub', label: 'CMMC Training' },
+    { id: 'dashboard', label: 'Dashboard' },
     { id: 'dailyDrills', label: 'Daily Drills' },
     { id: 'simulated', label: 'Exam' },
     { id: 'rapidMemory', label: 'Memory' },
-    { id: 'history', label: 'Progress' },
+    { id: 'history', label: 'Progress' }
   ];
 
   return (
@@ -128,14 +130,17 @@ const Navigation = ({ onLogout }) => {
               <button
                 key={id}
                 onClick={() => {
-                  if (id === 'trainingHub') {
-                    resetToTrainingHub();
+                  if (id === 'mainHub') {
+                    setMode('mainHub');
+                  } else if (id === 'cmmcHub') {
+                    setMode('cmmcHub');
                   } else if (id === 'dashboard') {
                     resetToDashboard();
                   } else if (id === 'simulated') {
                     startSimulatedTest(questions);
+                  } else {
+                    setMode(id);
                   }
-                  setMode(id);
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   mode === id
@@ -255,14 +260,17 @@ const Navigation = ({ onLogout }) => {
                 <button
                   key={id}
                   onClick={() => {
-                    if (id === 'trainingHub') {
-                      resetToTrainingHub();
+                    if (id === 'mainHub') {
+                      setMode('mainHub');
+                    } else if (id === 'cmmcHub') {
+                      setMode('cmmcHub');
                     } else if (id === 'dashboard') {
                       resetToDashboard();
                     } else if (id === 'simulated') {
                       startSimulatedTest(questions);
+                    } else {
+                      setMode(id);
                     }
-                    setMode(id);
                     setIsMobileMenuOpen(false);
                   }}
                   className={`w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -493,7 +501,8 @@ function AppContent({ userEmail, onLogout }) {
             </div>
           ) : (
             <>
-              {mode === 'trainingHub' && <TrainingHub />}
+              {mode === 'mainHub' && <MainHub />}
+              {mode === 'cmmcHub' && <CMMCHub />}
               {mode === 'practice' && <PracticeMode questions={questions} />}
               {mode === 'dashboard' && <Dashboard questions={questions} />}
               {mode === 'dailyDrills' && <DailyDrills questions={questions} />}
