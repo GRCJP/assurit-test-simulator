@@ -220,15 +220,15 @@ class UserDataSync {
     }
 
     return this.handleApiCall(async () => {
-      // Try to get token with proper audience
+      // First try with Management API audience
       try {
-        console.log('🔑 Attempting to get Management API token...');
+        console.log('🔑 Attempting Management API token...');
         console.log('🔑 Using audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
         
         const token = await getAccessTokenSilently({
           authorizationParams: {
             audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://dev-351wds1ubpw3eyut.us.auth0.com/api/v2/',
-            scope: 'offline_access read:current_user update:current_user_metadata read:users_app_metadata update:users_app_metadata'
+            scope: 'read:current_user update:current_user_metadata'
           }
         });
         
@@ -238,31 +238,54 @@ class UserDataSync {
         
         console.log('✅ Management API token received successfully');
         console.log('🔑 Token length:', token.length);
-        console.log('🔑 Token starts with:', token.substring(0, 20) + '...');
         
         // Reset failure count on success
         this.managementApiFailureCount = 0;
         return token;
-      } catch (error) {
-        this.managementApiFailureCount++;
-        console.error('❌ Management API token failed:', error.message);
-        console.error('❌ Full error:', error);
+      } catch (managementApiError) {
+        console.warn('⚠️ Management API token failed, trying fallback approach...');
+        console.warn('⚠️ Management API error:', managementApiError.message);
         
-        // If we've had too many failures, disable the Management API entirely
-        if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
-          console.warn(`🚫 Management API disabled after ${this.managementApiFailureCount} failures`);
-          this.managementApiAvailable = false;
+        // Fallback: Try with default audience and use userinfo endpoint
+        try {
+          console.log('🔄 Trying fallback token approach...');
+          const fallbackToken = await getAccessTokenSilently({
+            authorizationParams: {
+              scope: 'openid profile email'
+            }
+          });
+          
+          if (!fallbackToken) {
+            throw new Error('No fallback token received');
+          }
+          
+          console.log('✅ Fallback token received successfully');
+          console.log('🔑 Fallback token length:', fallbackToken.length);
+          
+          // Mark that we're using fallback approach
+          this.usingFallbackToken = true;
+          
+          // Reset failure count on success
+          this.managementApiFailureCount = 0;
+          return fallbackToken;
+          
+        } catch (fallbackError) {
+          this.managementApiFailureCount++;
+          console.error('❌ Both Management API and fallback tokens failed');
+          console.error('❌ Management API error:', managementApiError.message);
+          console.error('❌ Fallback error:', fallbackError.message);
+          
+          // If we've had too many failures, disable entirely
+          if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
+            console.warn(`🚫 All token methods disabled after ${this.managementApiFailureCount} failures`);
+            this.managementApiAvailable = false;
+            return null;
+          }
+          
+          console.log('💾 All token methods failed, using localStorage only');
+          console.log('💾 To fix this, configure Auth0 application Management API permissions');
           return null;
         }
-        
-        // Don't try fallback token - it won't work with Management API
-        // The fallback token doesn't have the required audience for Management API calls
-        // Just return null to trigger localStorage fallback immediately
-        console.warn(`⚠️ Management API token failed (${this.managementApiFailureCount}/${this.maxManagementApiFailures}): ${error.message}`);
-        console.log('💾 Skipping fallback token attempt - Management API requires specific audience');
-        console.log('💾 Falling back to localStorage for this request');
-        console.log('💾 This usually means the Auth0 application needs Management API permissions configured');
-        return null;
       }
     }, 'getManagementApiToken');
   }
@@ -329,31 +352,65 @@ class UserDataSync {
           const token = await this.getManagementApiToken(getAccessTokenSilently);
           
           if (!token) {
-            console.log('⚠️ No Management API token available, using localStorage');
+            console.log('⚠️ No token available, using localStorage');
             return this.getFromLocalStorage(bankId, dataType);
           }
 
-          // Get user metadata from Auth0
-          const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+          let cloudData = null;
+
+          // Try Management API first (if we have the right token)
+          if (!this.usingFallbackToken) {
+            try {
+              // Get user metadata from Auth0
+              const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+
+              if (response.ok) {
+                const userData = await response.json();
+                const userMetadata = userData.user_metadata || {};
+                const metadataKey = `cmmc_${bankId}_${dataType}`;
+                cloudData = userMetadata[metadataKey];
+                
+                if (cloudData) {
+                  console.log(`✅ Retrieved ${dataType} from Auth0 Management API`);
+                }
+              }
+            } catch (managementError) {
+              console.warn('⚠️ Management API access failed, trying userinfo endpoint...');
             }
-          });
-
-          if (!response.ok) {
-            console.warn(`⚠️ Management API not accessible (${response.status}), using localStorage`);
-            return this.getFromLocalStorage(bankId, dataType);
           }
-          
-          const userData = await response.json();
-          const userMetadata = userData.user_metadata || {};
-          const metadataKey = `cmmc_${bankId}_${dataType}`;
-          const cloudData = userMetadata[metadataKey];
+
+          // Fallback: Try userinfo endpoint (limited but may work)
+          if (!cloudData && this.usingFallbackToken) {
+            try {
+              const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/userinfo`, {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+
+              if (response.ok) {
+                const userInfo = await response.json();
+                // Check if user metadata is available in userinfo
+                const metadataNamespace = `${import.meta.env.VITE_AUTH0_DOMAIN}/user_metadata`;
+                const userMetadata = userInfo[metadataNamespace] || {};
+                const metadataKey = `cmmc_${bankId}_${dataType}`;
+                cloudData = userMetadata[metadataKey];
+                
+                if (cloudData) {
+                  console.log(`✅ Retrieved ${dataType} from Auth0 userinfo endpoint`);
+                }
+              }
+            } catch (userinfoError) {
+              console.warn('⚠️ Userinfo endpoint access failed:', userinfoError.message);
+            }
+          }
           
           if (cloudData) {
-            console.log(`✅ Retrieved ${dataType} from Auth0 user metadata`);
-            
             // Cache the result
             this.cache.set(cacheKey, { data: cloudData, timestamp: Date.now() });
             
@@ -366,10 +423,10 @@ class UserDataSync {
             
             return cloudData;
           } else {
-            console.log(`No ${dataType} found in Auth0 metadata, using localStorage`);
+            console.log(`No ${dataType} found in Auth0, using localStorage`);
           }
         } catch (functionError) {
-          console.warn('Auth0 Management API error:', functionError.message);
+          console.warn('Auth0 sync error:', functionError.message);
         }
       } else {
         console.log('☁️ Using localStorage for localhost development');
@@ -447,64 +504,77 @@ class UserDataSync {
           const token = await this.getManagementApiToken(getAccessTokenSilently);
           
           if (!token) {
-            console.log('⚠️ No Management API token available, using localStorage only');
+            console.log('⚠️ No token available, using localStorage only');
             return { success: true, dataType, saved: 'localStorage' };
           }
 
-          // Get current user metadata first
-          const getResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+          // If we're using fallback token, we can't write to Auth0 (userinfo is read-only)
+          if (this.usingFallbackToken) {
+            console.log('⚠️ Using fallback token - cannot save to Auth0, localStorage only');
+            console.log('💾 To enable cloud sync, configure Auth0 Management API permissions');
+            return { success: true, dataType, saved: 'localStorage' };
+          }
+
+          // Try Management API for writing data
+          try {
+            // Get current user metadata first
+            const getResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (!getResponse.ok) {
+              console.warn(`⚠️ Management API not accessible for read (${getResponse.status}), using localStorage only`);
+              return { success: true, dataType, saved: 'localStorage' };
             }
-          });
+            
+            const userData = await getResponse.json();
+            const currentMetadata = userData.user_metadata || {};
+            
+            // Update specific data type in metadata
+            const metadataKey = `cmmc_${bankId}_${dataType}`;
+            const updatedMetadata = { ...currentMetadata };
+            updatedMetadata[metadataKey] = data;
+            
+            // Update user metadata
+            const patchResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
+              method: 'PATCH',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                user_metadata: updatedMetadata
+              })
+            });
 
-          if (!getResponse.ok) {
-            console.warn(`⚠️ Management API not accessible for read (${getResponse.status}), using localStorage only`);
-            return { success: true, dataType, saved: 'localStorage' };
+            if (!patchResponse.ok) {
+              console.warn(`⚠️ Management API not accessible for write (${patchResponse.status}), using localStorage only`);
+              return { success: true, dataType, saved: 'localStorage' };
+            }
+            
+            console.log(`✅ Saved ${dataType} to Auth0 user metadata`);
+            
+            // Update cache
+            const cacheKey = this.getCacheKey(userId, bankId, dataType);
+            this.cache.set(cacheKey, {
+              data,
+              timestamp: Date.now()
+            });
+            
+            // Update health tracking
+            this.lastSuccessfulSync = Date.now();
+            this.errorCount = 0;
+            
+            return { success: true, dataType, saved: 'auth0-metadata' };
+          } catch (managementError) {
+            console.error('❌ Auth0 Management API sync error:', managementError);
+            console.log('💾 Falling back to localStorage only');
           }
-          
-          const userData = await getResponse.json();
-          const currentMetadata = userData.user_metadata || {};
-          
-          // Update specific data type in metadata
-          const metadataKey = `cmmc_${bankId}_${dataType}`;
-          const updatedMetadata = { ...currentMetadata };
-          updatedMetadata[metadataKey] = data;
-          
-          // Update user metadata
-          const patchResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
-            method: 'PATCH',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              user_metadata: updatedMetadata
-            })
-          });
-
-          if (!patchResponse.ok) {
-            console.warn(`⚠️ Management API not accessible for write (${patchResponse.status}), using localStorage only`);
-            return { success: true, dataType, saved: 'localStorage' };
-          }
-          
-          console.log(`✅ Saved ${dataType} to Auth0 user metadata`);
-          
-          // Update cache
-          const cacheKey = this.getCacheKey(userId, bankId, dataType);
-          this.cache.set(cacheKey, {
-            data,
-            timestamp: Date.now()
-          });
-          
-          // Update health tracking
-          this.lastSuccessfulSync = Date.now();
-          this.errorCount = 0;
-          
-          return { success: true, dataType, saved: 'auth0-metadata' };
         } catch (functionError) {
-          console.error('❌ Auth0 Management API sync error:', functionError);
+          console.warn('Auth0 sync error:', functionError.message);
         }
       } else {
         console.log('☁️ Using localStorage for localhost development');
