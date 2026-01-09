@@ -125,13 +125,17 @@ const Navigation = ({ onLogout }) => {
             <img 
               src={
                 questionBankId === 'bankCCA' 
-                  ? '/badge.png'
-                  : '/assertion.png'
+                  ? '/badge.png?v=2'
+                  : '/assertion.png?v=2'
               }
               alt={
                 questionBankId === 'bankCCA' ? 'CMMC-CCA Badge' : 'CMMC Badge'
               }
               className="h-10 sm:h-14 w-auto"
+              onError={(e) => {
+                console.warn('Badge image failed to load, using fallback');
+                e.target.style.display = 'none';
+              }}
             />
             
             <h1 className={`text-base sm:text-xl font-bold ${darkMode ? 'text-[#E6E6E6]' : 'text-[#1E1E1E]'}`}>

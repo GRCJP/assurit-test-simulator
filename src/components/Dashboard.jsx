@@ -395,9 +395,13 @@ const Dashboard = ({ questions }) => {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
               <div className="flex-shrink-0 flex justify-center sm:justify-start">
                 <img 
-                  src={questionBankId === 'bankCCA' ? "/badge.png" : "/assertion.png"} 
+                  src={questionBankId === 'bankCCA' ? "/badge.png?v=2" : "/assertion.png?v=2"} 
                   alt={questionBankId === 'bankCCA' ? "CMMC Badge" : "CMMC Assertion"} 
                   className="w-32 h-32 sm:w-40 sm:h-40 object-contain"
+                  onError={(e) => {
+                    console.warn('Dashboard badge image failed to load, using fallback');
+                    e.target.style.display = 'none';
+                  }}
                 />
               </div>
               <div className="text-center sm:text-left">
