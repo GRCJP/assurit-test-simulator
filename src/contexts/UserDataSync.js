@@ -215,82 +215,45 @@ class UserDataSync {
       return null;
     }
 
-    // If Management API has been disabled due to repeated failures, return null immediately
-    if (!this.managementApiAvailable) {
-      console.log('🚫 Management API disabled due to repeated failures, using localStorage only');
-      return null;
-    }
-
-    if (!this.validateTokenConfig()) {
-      return null;
-    }
-
-    return this.handleApiCall(async () => {
-      // First try with Management API audience
-      try {
-        console.log('🔑 Attempting Management API token...');
-        console.log('🔑 Using audience:', import.meta.env.VITE_AUTH0_AUDIENCE);
-        
-        const token = await getAccessTokenSilently({
-          authorizationParams: {
-            audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://dev-351wds1ubpw3eyut.us.auth0.com/api/v2/',
-            scope: 'read:current_user update:current_user_metadata'
-          }
-        });
-        
-        if (!token) {
-          throw new Error('No token received from getAccessTokenSilently');
+    // Try a simpler approach - use basic Auth0 token without Management API
+    try {
+      console.log('🔑 Attempting basic Auth0 token for sync...');
+      
+      // Get basic token without special audience or scopes
+      const token = await getAccessTokenSilently({
+        authorizationParams: {
+          scope: 'openid profile email'
         }
-        
-        console.log('✅ Management API token received successfully');
-        console.log('🔑 Token length:', token.length);
-        
-        // Reset failure count on success
-        this.managementApiFailureCount = 0;
-        return token;
-      } catch (managementApiError) {
-        console.warn('⚠️ Management API token failed, trying fallback approach...');
-        console.warn('⚠️ Management API error:', managementApiError.message);
-        
-        // Fallback: Try with default audience and use userinfo endpoint
-        try {
-          console.log('🔄 Trying fallback token approach...');
-          // Use the most basic token request - no audience, minimal scope
-          const fallbackToken = await getAccessTokenSilently({
-            authorizationParams: {
-              scope: 'openid profile email'
-            }
-          });
-          
-          if (!fallbackToken) {
-            throw new Error('No fallback token received');
-          }
-          
-          console.log('✅ Fallback token received successfully');
-          console.log('🔑 Fallback token length:', fallbackToken.length);
-          
-          // Mark that we're using fallback approach
-          this.usingFallbackToken = true;
-          
-          // Reset failure count on success
-          this.managementApiFailureCount = 0;
-          return fallbackToken;
-          
-        } catch (fallbackError) {
-          console.error('❌ Fallback token also failed:', fallbackError.message);
-          console.log('💾 All token methods failed, disabling sync temporarily');
-          
-          // Disable token attempts entirely after repeated failures
-          if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
-            console.warn(`🚫 All token methods disabled after ${this.managementApiFailureCount} failures`);
-            this.managementApiAvailable = false;
-            return null;
-          }
-          
-          return null;
-        }
+      });
+      
+      if (!token) {
+        throw new Error('No token received from getAccessTokenSilently');
       }
-    }, 'getManagementApiToken');
+      
+      console.log('✅ Basic Auth0 token received successfully');
+      console.log('🔑 Token length:', token.length);
+      
+      // Mark that we're using basic token approach
+      this.usingBasicToken = true;
+      
+      // Reset failure count on success
+      this.managementApiFailureCount = 0;
+      return token;
+      
+    } catch (error) {
+      this.managementApiFailureCount++;
+      console.error('❌ Basic Auth0 token failed:', error.message);
+      
+      // If we've had too many failures, disable entirely
+      if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
+        console.warn(`🚫 All token methods disabled after ${this.managementApiFailureCount} failures`);
+        this.managementApiAvailable = false;
+        return null;
+      }
+      
+      console.log('💾 Token failed, using localStorage only');
+      return null;
+    }
   }
 
   // Validate JWT token format
