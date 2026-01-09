@@ -224,7 +224,7 @@ class UserDataSync {
       try {
         const token = await getAccessTokenSilently({
           authorizationParams: {
-            audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://dev-cmmc-mastery.us.auth0.com/api/v2/',
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://dev-351wds1ubpw3eyut.us.auth0.com/api/v2/',
             scope: 'offline_access read:current_user update:current_user_metadata read:users_app_metadata update:users_app_metadata'
           }
         });
@@ -638,7 +638,7 @@ class UserDataSync {
       // Try to update user metadata via Auth0 Management API
       try {
         console.log('Getting auth token for update...');
-        const response = await fetch(`https://dev-cmmc-mastery.us.auth0.com/api/v2/users/${update.userId}`, {
+        const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${update.userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -663,7 +663,7 @@ class UserDataSync {
         updatedMetadata[metadataKey] = update.data;
         
         // Single API call to update data
-        const patchResponse = await fetch(`https://dev-cmmc-mastery.us.auth0.com/api/v2/users/${update.userId}`, {
+        const patchResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${update.userId}`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -723,7 +723,7 @@ class UserDataSync {
 
       // Get current user metadata
       console.log(`Fetching current user metadata for ${userId}...`);
-      const getResponse = await fetch(`https://dev-cmmc-mastery.us.auth0.com/api/v2/users/${userId}`, {
+      const getResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -747,7 +747,7 @@ class UserDataSync {
       });
 
       console.log('Updating user metadata...');
-      const patchResponse = await fetch(`https://dev-cmmc-mastery.us.auth0.com/api/v2/users/${userId}`, {
+      const patchResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
