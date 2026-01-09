@@ -209,6 +209,12 @@ class UserDataSync {
 
   // Get the Auth0 Management API token for user metadata operations
   async getManagementApiToken(getAccessTokenSilently) {
+    // Check if cloud sync is disabled
+    if (import.meta.env.VITE_DISABLE_CLOUD_SYNC === 'true') {
+      console.log('☁️ Cloud sync disabled via VITE_DISABLE_CLOUD_SYNC flag');
+      return null;
+    }
+
     // If Management API has been disabled due to repeated failures, return null immediately
     if (!this.managementApiAvailable) {
       console.log('🚫 Management API disabled due to repeated failures, using localStorage only');
@@ -249,6 +255,7 @@ class UserDataSync {
         // Fallback: Try with default audience and use userinfo endpoint
         try {
           console.log('🔄 Trying fallback token approach...');
+          // Use the most basic token request - no audience, minimal scope
           const fallbackToken = await getAccessTokenSilently({
             authorizationParams: {
               scope: 'openid profile email'
@@ -270,20 +277,16 @@ class UserDataSync {
           return fallbackToken;
           
         } catch (fallbackError) {
-          this.managementApiFailureCount++;
-          console.error('❌ Both Management API and fallback tokens failed');
-          console.error('❌ Management API error:', managementApiError.message);
-          console.error('❌ Fallback error:', fallbackError.message);
+          console.error('❌ Fallback token also failed:', fallbackError.message);
+          console.log('💾 All token methods failed, disabling sync temporarily');
           
-          // If we've had too many failures, disable entirely
+          // Disable token attempts entirely after repeated failures
           if (this.managementApiFailureCount >= this.maxManagementApiFailures) {
             console.warn(`🚫 All token methods disabled after ${this.managementApiFailureCount} failures`);
             this.managementApiAvailable = false;
             return null;
           }
           
-          console.log('💾 All token methods failed, using localStorage only');
-          console.log('💾 To fix this, configure Auth0 application Management API permissions');
           return null;
         }
       }
@@ -346,7 +349,7 @@ class UserDataSync {
       console.log('🔑 Using Auth0 user.sub as userKey:', userId);
 
       // RE-ENABLED - Cloud sync now working on GitHub Pages using Auth0 Management API
-      if (window.location.hostname !== 'localhost') {
+      if (window.location.hostname !== 'localhost' && import.meta.env.VITE_DISABLE_CLOUD_SYNC !== 'true') {
         try {
           // Use Auth0 Management API for cross-device sync
           const token = await this.getManagementApiToken(getAccessTokenSilently);
@@ -498,7 +501,7 @@ class UserDataSync {
       this.saveToLocalStorage(bankId, dataType, data);
       
       // RE-ENABLED - Cloud sync now working on GitHub Pages using Auth0 Management API
-      if (window.location.hostname !== 'localhost') {
+      if (window.location.hostname !== 'localhost' && import.meta.env.VITE_DISABLE_CLOUD_SYNC !== 'true') {
         try {
           // Use Auth0 Management API for cross-device sync
           const token = await this.getManagementApiToken(getAccessTokenSilently);
