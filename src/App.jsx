@@ -17,6 +17,7 @@ import DomainPractice from './components/DomainPractice';
 import ComprehensiveProgress from './components/ComprehensiveProgress';
 import ErrorBoundary from './components/ErrorBoundary';
 import TrainingHub from './components/TrainingHub';
+import TestComponent from './components/TestComponent';
 
 import questionsCCP from '../data/questions_ccp_combined.json';
 import questionsCCA from '../data/questions_cca.json';
@@ -493,7 +494,7 @@ function AppContent({ userEmail, onLogout }) {
             </div>
           ) : (
             <>
-              {mode === 'trainingHub' && <TrainingHub />}
+              {mode === 'trainingHub' && <TestComponent />}
               {mode === 'practice' && <PracticeMode questions={questions} />}
               {mode === 'dashboard' && <Dashboard questions={questions} />}
               {mode === 'dailyDrills' && <DailyDrills questions={questions} />}
