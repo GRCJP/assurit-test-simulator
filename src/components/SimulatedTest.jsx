@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
-import { Bookmark, Clock } from 'lucide-react';
+import { Bookmark, Clock, Grid3X3 } from 'lucide-react';
+import QuestionBank from './QuestionBank';
 
 // Fisher-Yates shuffle algorithm for better randomization
 const shuffle = (arr) => {
@@ -57,6 +58,7 @@ const SimulatedTest = ({ questions }) => {
   const [testScore, setTestScore] = useState({ correct: 0, total: 0, percentage: 0 });
   const [showMissedReview, setShowMissedReview] = useState(false);
   const [showMarkedReview, setShowMarkedReview] = useState(false);
+  const [showQuestionBank, setShowQuestionBank] = useState(false);
   
   // Check if simulated test data matches current question bank
   const [isInitialized, setIsInitialized] = useState(false);
@@ -874,6 +876,18 @@ const SimulatedTest = ({ questions }) => {
                 </button>
               )}
               <button
+                onClick={() => setShowQuestionBank(true)}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border-2 ${
+                  darkMode
+                    ? 'bg-purple-600 text-white hover:bg-purple-700 border-purple-500'
+                    : 'bg-purple-500 text-white hover:bg-purple-600 border-purple-400'
+                }`}
+                title="View all questions and navigate to marked ones"
+              >
+                <Grid3X3 className="w-4 h-4 inline mr-1" />
+                Question Bank
+              </button>
+              <button
                 onClick={handleFinish}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border-2 ${
                   darkMode
@@ -944,6 +958,19 @@ const SimulatedTest = ({ questions }) => {
           ))}
         </div>
       </div>
+      
+      {/* Question Bank Modal */}
+      {showQuestionBank && (
+        <QuestionBank
+          questions={simulatedOrder}
+          currentIndex={simulatedIndex}
+          setCurrentIndex={setSimulatedIndex}
+          onClose={() => setShowQuestionBank(false)}
+          simulatedAnswers={simulatedAnswers}
+          markedQuestions={markedQuestions}
+          timeRemaining={timeRemaining}
+        />
+      )}
       </div>
     </div>
   );
