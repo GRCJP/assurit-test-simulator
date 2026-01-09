@@ -312,53 +312,57 @@ class UserDataSync {
       // Use Auth0 user.sub as stable identifier
       console.log('🔑 Using Auth0 user.sub as userKey:', userId);
 
-      // TEMPORARILY DISABLED - let user study in peace
-      if (false && window.location.hostname !== 'localhost') {
+      // RE-ENABLED - Cloud sync now working on GitHub Pages using Auth0 Management API
+      if (window.location.hostname !== 'localhost') {
         try {
-          const response = await fetch('/.netlify/functions/github-sync', {
-            method: 'POST',
+          // Use Auth0 Management API for cross-device sync
+          const token = await this.getManagementApiToken(getAccessTokenSilently);
+          
+          if (!token) {
+            console.log('⚠️ No Management API token available, using localStorage');
+            return this.getFromLocalStorage(bankId, dataType);
+          }
+
+          // Get user metadata from Auth0
+          const response = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
             headers: {
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              action: 'read',
-              userKey: userId,
-              fileName: 'cmmc_user_data.json'
-            })
+            }
           });
 
           if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ GitHub read failed:', response.status, errorText);
-            throw new Error(`GitHub read failed with status ${response.status}: ${errorText}`);
+            console.warn(`⚠️ Management API not accessible (${response.status}), using localStorage`);
+            return this.getFromLocalStorage(bankId, dataType);
           }
           
-          const result = await response.json();
+          const userData = await response.json();
+          const userMetadata = userData.user_metadata || {};
+          const metadataKey = `cmmc_${bankId}_${dataType}`;
+          const cloudData = userMetadata[metadataKey];
           
-          if (result.success && result.data && result.data[dataType]) {
-            console.log(`✅ Retrieved ${dataType} from GitHub Gist`);
-            
-            const specificData = result.data[dataType];
+          if (cloudData) {
+            console.log(`✅ Retrieved ${dataType} from Auth0 user metadata`);
             
             // Cache the result
-            this.cache.set(cacheKey, { data: specificData, timestamp: Date.now() });
+            this.cache.set(cacheKey, { data: cloudData, timestamp: Date.now() });
             
             // Also update localStorage as backup
-            this.saveToLocalStorage(bankId, dataType, specificData);
+            this.saveToLocalStorage(bankId, dataType, cloudData);
             
             // Update health tracking
             this.lastSuccessfulSync = Date.now();
             this.errorCount = 0;
             
-            return specificData;
+            return cloudData;
           } else {
-            console.log(`No ${dataType} found in GitHub Gist, using localStorage`);
+            console.log(`No ${dataType} found in Auth0 metadata, using localStorage`);
           }
         } catch (functionError) {
-          console.warn('GitHub sync error:', functionError.message);
+          console.warn('Auth0 Management API error:', functionError.message);
         }
       } else {
-        console.log('☁️ Cloud sync temporarily disabled - using localStorage only');
+        console.log('☁️ Using localStorage for localhost development');
       }
 
       return this.getFromLocalStorage(bankId, dataType);
@@ -426,62 +430,74 @@ class UserDataSync {
       // Save to localStorage immediately as backup
       this.saveToLocalStorage(bankId, dataType, data);
       
-      // TEMPORARILY DISABLED - let user study in peace
-      if (false && window.location.hostname !== 'localhost') {
+      // RE-ENABLED - Cloud sync now working on GitHub Pages using Auth0 Management API
+      if (window.location.hostname !== 'localhost') {
         try {
-          // Use single file for all user data
-          const fileName = 'cmmc_user_data.json';
+          // Use Auth0 Management API for cross-device sync
+          const token = await this.getManagementApiToken(getAccessTokenSilently);
           
-          // Get all current data from localStorage to merge
-          const allData = this.getAllUserData(bankId);
-          allData[dataType] = data;
-          
-          const response = await fetch('/.netlify/functions/github-sync', {
-            method: 'POST',
+          if (!token) {
+            console.log('⚠️ No Management API token available, using localStorage only');
+            return { success: true, dataType, saved: 'localStorage' };
+          }
+
+          // Get current user metadata first
+          const getResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
             headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (!getResponse.ok) {
+            console.warn(`⚠️ Management API not accessible for read (${getResponse.status}), using localStorage only`);
+            return { success: true, dataType, saved: 'localStorage' };
+          }
+          
+          const userData = await getResponse.json();
+          const currentMetadata = userData.user_metadata || {};
+          
+          // Update specific data type in metadata
+          const metadataKey = `cmmc_${bankId}_${dataType}`;
+          const updatedMetadata = { ...currentMetadata };
+          updatedMetadata[metadataKey] = data;
+          
+          // Update user metadata
+          const patchResponse = await fetch(`https://${import.meta.env.VITE_AUTH0_DOMAIN}/api/v2/users/${userId}`, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `Bearer ${token}`,
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              action: 'write',
-              userKey: userId,
-              fileName: fileName,
-              data: allData
+              user_metadata: updatedMetadata
             })
           });
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ GitHub sync failed:', response.status, errorText);
-            throw new Error(`GitHub sync failed with status ${response.status}: ${errorText}`);
+          if (!patchResponse.ok) {
+            console.warn(`⚠️ Management API not accessible for write (${patchResponse.status}), using localStorage only`);
+            return { success: true, dataType, saved: 'localStorage' };
           }
           
-          const result = await response.json();
+          console.log(`✅ Saved ${dataType} to Auth0 user metadata`);
           
-          if (result.success) {
-            console.log(`✅ Saved ${dataType} to GitHub Gist`);
-            
-            // Update cache
-            const cacheKey = this.getCacheKey(userId, bankId, dataType);
-            this.cache.set(cacheKey, {
-              data,
-              timestamp: Date.now()
-            });
-            
-            // Update health tracking
-            this.lastSuccessfulSync = Date.now();
-            this.errorCount = 0;
-            
-            return { success: true, dataType, saved: 'github-gist' };
-          } else {
-            console.error('❌ GitHub sync returned success:false:', result);
-            throw new Error(result.error || 'Unknown error from GitHub sync');
-          }
+          // Update cache
+          const cacheKey = this.getCacheKey(userId, bankId, dataType);
+          this.cache.set(cacheKey, {
+            data,
+            timestamp: Date.now()
+          });
+          
+          // Update health tracking
+          this.lastSuccessfulSync = Date.now();
+          this.errorCount = 0;
+          
+          return { success: true, dataType, saved: 'auth0-metadata' };
         } catch (functionError) {
-          console.error('❌ GitHub Gist sync error:', functionError);
-          console.error('Error details:', functionError.message, functionError.stack);
+          console.error('❌ Auth0 Management API sync error:', functionError);
         }
       } else {
-        console.log('☁️ Cloud sync temporarily disabled - using localStorage only');
+        console.log('☁️ Using localStorage for localhost development');
       }
       
       return { success: true, dataType, saved: 'localStorage' };
