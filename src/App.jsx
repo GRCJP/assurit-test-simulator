@@ -494,7 +494,7 @@ function AppContent({ userEmail, onLogout }) {
             </div>
           ) : (
             <>
-              {mode === 'trainingHub' && <TestComponent />}
+              {mode === 'trainingHub' && <TrainingHub />}
               {mode === 'practice' && <PracticeMode questions={questions} />}
               {mode === 'dashboard' && <Dashboard questions={questions} />}
               {mode === 'dailyDrills' && <DailyDrills questions={questions} />}
