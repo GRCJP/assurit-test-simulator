@@ -17,7 +17,6 @@ import DomainPractice from './components/DomainPractice';
 import ComprehensiveProgress from './components/ComprehensiveProgress';
 import ErrorBoundary from './components/ErrorBoundary';
 import TrainingHub from './components/TrainingHub';
-import TestComponent from './components/TestComponent';
 
 import questionsCCP from '../data/questions_ccp_combined.json';
 import questionsCCA from '../data/questions_cca.json';
