@@ -4,6 +4,7 @@ import { useTestMode } from '../contexts/TestModeContext';
 const RapidMemory = ({ questions }) => {
   const { textSize, darkMode, markQuestion, markedQuestions, rapidIndex, setRapidIndex } = useTestMode();
   const [currentQuestion, setCurrentQuestion] = useState(rapidIndex);
+  const [showExplanation, setShowExplanation] = useState(false);
 
   // Save current index when it changes
   useEffect(() => {
@@ -13,12 +14,14 @@ const RapidMemory = ({ questions }) => {
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
+      setShowExplanation(false); // Reset explanation when navigating
     }
   };
 
   const handlePrevious = () => {
     if (currentQuestion > 0) {
       setCurrentQuestion(prev => prev - 1);
+      setShowExplanation(false); // Reset explanation when navigating
     }
   };
 
@@ -135,6 +138,31 @@ const RapidMemory = ({ questions }) => {
               ))}
             </div>
           </div>
+
+          {/* Explanation Toggle */}
+          {q.explanation && (
+            <button
+              onClick={() => setShowExplanation(!showExplanation)}
+              className={`w-full p-3 rounded-lg border-2 mb-4 transition-all ${
+                showExplanation
+                  ? darkMode ? 'border-blue-500 bg-blue-900/20' : 'border-blue-500 bg-blue-50'
+                  : darkMode ? 'border-gray-700 bg-gray-800 hover:border-gray-600' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+              }`}
+            >
+              <div className="text-center font-medium">
+                {showExplanation ? 'Hide Explanation' : 'Show Explanation'}
+              </div>
+            </button>
+          )}
+
+          {showExplanation && q.explanation && (
+            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+              <h3 className="font-semibold mb-2">Explanation:</h3>
+              <p className={`${textSize === 'sm' ? 'text-sm' : textSize === 'lg' ? 'text-lg' : textSize === 'xl' ? 'text-xl' : ''} whitespace-pre-line`}>
+                {q.explanation}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
