@@ -16,6 +16,7 @@ import PracticeMode from './components/PracticeMode';
 import DomainPractice from './components/DomainPractice';
 import ComprehensiveProgress from './components/ComprehensiveProgress';
 import ErrorBoundary from './components/ErrorBoundary';
+import TrainingHub from './components/TrainingHub';
 
 import questionsCCP from '../data/questions_ccp_combined.json';
 import questionsCCA from '../data/questions_cca.json';
@@ -24,7 +25,7 @@ import { isKindleDevice, shouldShowKindleMode } from './utils/deviceDetection';
 
 // Navigation component
 const Navigation = ({ onLogout }) => {
-  const { mode, setMode, darkMode, setDarkMode, textSize, setTextSize, startSimulatedTest, resetProgress, questionBankId, setQuestionBankId, resetToDashboard } = useTestMode();
+  const { mode, setMode, darkMode, setDarkMode, textSize, setTextSize, startSimulatedTest, resetProgress, questionBankId, setQuestionBankId, resetToDashboard, resetToTrainingHub } = useTestMode();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [kindleMode, setKindleMode] = useState(() => {
@@ -89,7 +90,8 @@ const Navigation = ({ onLogout }) => {
   };
 
   const modeButtons = [
-    { id: 'dashboard', label: 'Home' },
+    { id: 'trainingHub', label: 'Training Hub' },
+    { id: 'dashboard', label: 'CMMC Exam' },
     { id: 'dailyDrills', label: 'Daily Drills' },
     { id: 'simulated', label: 'Exam' },
     { id: 'rapidMemory', label: 'Memory' },
@@ -116,7 +118,7 @@ const Navigation = ({ onLogout }) => {
             />
             
             <h1 className={`text-base sm:text-xl font-bold ${darkMode ? 'text-[#E6E6E6]' : 'text-[#1E1E1E]'}`}>
-              CMMC Mastery
+              Corporate Training Hub
             </h1>
           </div>
 
@@ -126,7 +128,9 @@ const Navigation = ({ onLogout }) => {
               <button
                 key={id}
                 onClick={() => {
-                  if (id === 'dashboard') {
+                  if (id === 'trainingHub') {
+                    resetToTrainingHub();
+                  } else if (id === 'dashboard') {
                     resetToDashboard();
                   } else if (id === 'simulated') {
                     startSimulatedTest(questions);
@@ -251,7 +255,9 @@ const Navigation = ({ onLogout }) => {
                 <button
                   key={id}
                   onClick={() => {
-                    if (id === 'dashboard') {
+                    if (id === 'trainingHub') {
+                      resetToTrainingHub();
+                    } else if (id === 'dashboard') {
                       resetToDashboard();
                     } else if (id === 'simulated') {
                       startSimulatedTest(questions);
@@ -487,6 +493,7 @@ function AppContent({ userEmail, onLogout }) {
             </div>
           ) : (
             <>
+              {mode === 'trainingHub' && <TrainingHub />}
               {mode === 'practice' && <PracticeMode questions={questions} />}
               {mode === 'dashboard' && <Dashboard questions={questions} />}
               {mode === 'dailyDrills' && <DailyDrills questions={questions} />}

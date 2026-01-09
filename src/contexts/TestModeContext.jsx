@@ -207,12 +207,12 @@ export const TestModeProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlMode = urlParams.get('mode');
-      if (urlMode && ['practice', 'dailyDrills', 'simulated', 'rapidMemory', 'history', 'studyPlanner', 'performance', 'cheatSheet', 'reviewMissed', 'reviewMarked', 'missedCoach'].includes(urlMode)) {
+      if (urlMode && ['trainingHub', 'practice', 'dailyDrills', 'simulated', 'rapidMemory', 'history', 'studyPlanner', 'performance', 'cheatSheet', 'reviewMissed', 'reviewMarked', 'missedCoach'].includes(urlMode)) {
         return urlMode;
       }
-      return localStorage.getItem('mode') || 'dashboard';
+      return localStorage.getItem('mode') || 'trainingHub';
     }
-    return 'dashboard';
+    return 'trainingHub';
   });
   const [questionBankId, setQuestionBankId] = useState(() => {
     // Initialize question bank from localStorage immediately
@@ -812,6 +812,21 @@ export const TestModeProvider = ({ children }) => {
     // Only update URL if feature flag is enabled
     if (isFeatureEnabled('dashboardPersistence')) {
       // Clean URL for dashboard
+      const url = new URL(window.location);
+      url.searchParams.delete('mode');
+      window.history.replaceState({}, '', url);
+    }
+  }, [mode, isFeatureEnabled]);
+
+  // Function to reset to training hub (useful for navigation and redirects)
+  const resetToTrainingHub = useCallback(() => {
+    console.log('🏠 resetToTrainingHub called - current mode:', mode);
+    setMode('trainingHub');
+    localStorage.setItem('mode', 'trainingHub');
+    
+    // Only update URL if feature flag is enabled
+    if (isFeatureEnabled('dashboardPersistence')) {
+      // Clean URL for training hub
       const url = new URL(window.location);
       url.searchParams.delete('mode');
       window.history.replaceState({}, '', url);
@@ -2734,6 +2749,7 @@ export const TestModeProvider = ({ children }) => {
     mode,
     setMode: setModeWithPersistence,
     resetToDashboard,
+    resetToTrainingHub,
     initializeFromURL,
     darkMode,
     setDarkMode,
