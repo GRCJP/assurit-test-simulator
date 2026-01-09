@@ -69,7 +69,7 @@ const DomainSelector = ({
           name: question.domain,
           totalQuestions: 0,
           missedCount: 0,
-          mastery: 50, // Default to 50% if no data
+          mastery: 0, // Default to 0% if no data
           questions: []
         };
       }

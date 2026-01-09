@@ -1909,7 +1909,7 @@ export const TestModeProvider = ({ children }) => {
     const domainPerformance = adaptiveDifficulty.domainPerformance[question.domain] || [];
     const domainAccuracy = domainPerformance.length > 0 
       ? domainPerformance.filter(Boolean).length / domainPerformance.length 
-      : 0.5; // Default to 50% if no data
+      : 0; // Default to 0% if no data
     
     // Map accuracy to difficulty (1-5 scale)
     if (domainAccuracy > 0.9) return 5; // Very hard
