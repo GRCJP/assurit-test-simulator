@@ -84,7 +84,7 @@ const DomainSelector = ({
     Object.keys(domains).forEach(domainName => {
       const masteryData = domainMastery?.levels?.[domainName];
       if (masteryData) {
-        domains[domainName].mastery = Math.round((masteryData.masteryLevel || 0.5) * 100);
+        domains[domainName].mastery = Math.round((masteryData.masteryLevel || 0) * 100);
         domains[domainName].attempts = masteryData.attempts || 0;
         domains[domainName].correct = masteryData.correct || 0;
       }

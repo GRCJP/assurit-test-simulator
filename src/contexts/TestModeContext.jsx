@@ -1946,7 +1946,7 @@ export const TestModeProvider = ({ children }) => {
         if (!newLevels[domain]) {
           console.log(`➕ Adding new domain: ${domain}`);
           newLevels[domain] = {
-            masteryLevel: 0.5,     // start neutral
+            masteryLevel: 0,     // start at 0% instead of 50%
             attempts: 0,
             correct: 0,
             total: 0,
@@ -1997,7 +1997,7 @@ export const TestModeProvider = ({ children }) => {
 
       if (!newLevels[domain]) {
         newLevels[domain] = {
-          masteryLevel: 0.5,     // start neutral
+          masteryLevel: 0,     // start at 0% instead of 50%
           attempts: 0,
           correct: 0,
           total: 0,
