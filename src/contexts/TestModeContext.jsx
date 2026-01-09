@@ -207,13 +207,13 @@ export const TestModeProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlMode = urlParams.get('mode');
-      const validModes = ['mainHub', 'cmmcHub', 'dashboard', 'practice', 'dailyDrills', 'simulated', 'rapidMemory', 'cheatSheet', 'reviewMissed', 'missedCoach', 'reviewMarked', 'history', 'studyPlanner', 'performance', 'domainPractice'];
+      const validModes = ['signIn', 'trainingOfferings', 'cmmcHub', 'dashboard', 'practice', 'dailyDrills', 'simulated', 'rapidMemory', 'cheatSheet', 'reviewMissed', 'missedCoach', 'reviewMarked', 'history', 'studyPlanner', 'performance', 'domainPractice'];
       if (validModes.includes(urlMode)) {
         return urlMode;
       }
-      return localStorage.getItem('mode') || 'mainHub';
+      return localStorage.getItem('mode') || 'signIn';
     }
-    return 'mainHub';
+    return 'signIn';
   });
   const [questionBankId, setQuestionBankId] = useState(() => {
     // Initialize question bank from localStorage immediately
@@ -822,8 +822,8 @@ export const TestModeProvider = ({ children }) => {
   // Function to reset to training hub (useful for navigation and redirects)
   const resetToTrainingHub = useCallback(() => {
     console.log('🏠 resetToTrainingHub called - current mode:', mode);
-    setMode('mainHub');
-    localStorage.setItem('mode', 'mainHub');
+    setMode('trainingOfferings');
+    localStorage.setItem('mode', 'trainingOfferings');
     
     // Only update URL if feature flag is enabled
     if (isFeatureEnabled('dashboardPersistence')) {

@@ -16,7 +16,8 @@ import PracticeMode from './components/PracticeMode';
 import DomainPractice from './components/DomainPractice';
 import ComprehensiveProgress from './components/ComprehensiveProgress';
 import ErrorBoundary from './components/ErrorBoundary';
-import MainHub from './components/MainHub';
+import SignInPage from './components/SignInPage';
+import TrainingOfferings from './components/TrainingOfferings';
 import CMMCHub from './components/CMMCHub';
 
 import questionsCCP from '../data/questions_ccp_combined.json';
@@ -91,7 +92,8 @@ const Navigation = ({ onLogout }) => {
   };
 
   const modeButtons = [
-    { id: 'mainHub', label: 'Training Hub' },
+    { id: 'signIn', label: 'Sign In' },
+    { id: 'trainingOfferings', label: 'Courses' },
     { id: 'cmmcHub', label: 'CMMC Training' },
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'dailyDrills', label: 'Daily Drills' },
@@ -130,8 +132,10 @@ const Navigation = ({ onLogout }) => {
               <button
                 key={id}
                 onClick={() => {
-                  if (id === 'mainHub') {
-                    setMode('mainHub');
+                  if (id === 'signIn') {
+                    setMode('signIn');
+                  } else if (id === 'trainingOfferings') {
+                    setMode('trainingOfferings');
                   } else if (id === 'cmmcHub') {
                     setMode('cmmcHub');
                   } else if (id === 'dashboard') {
@@ -260,8 +264,10 @@ const Navigation = ({ onLogout }) => {
                 <button
                   key={id}
                   onClick={() => {
-                    if (id === 'mainHub') {
-                      setMode('mainHub');
+                    if (id === 'signIn') {
+                      setMode('signIn');
+                    } else if (id === 'trainingOfferings') {
+                      setMode('trainingOfferings');
                     } else if (id === 'cmmcHub') {
                       setMode('cmmcHub');
                     } else if (id === 'dashboard') {
@@ -501,7 +507,8 @@ function AppContent({ userEmail, onLogout }) {
             </div>
           ) : (
             <>
-              {mode === 'mainHub' && <MainHub />}
+              {mode === 'signIn' && <SignInPage />}
+              {mode === 'trainingOfferings' && <TrainingOfferings />}
               {mode === 'cmmcHub' && <CMMCHub />}
               {mode === 'practice' && <PracticeMode questions={questions} />}
               {mode === 'dashboard' && <Dashboard questions={questions} />}
