@@ -16,63 +16,18 @@ export const useTestMode = () => {
 };
 
 const useSupabaseUidFromAuth0 = () => {
-  const { isAuthenticated, getIdTokenClaims, loginWithRedirect } = useAuth0();
+  const { isAuthenticated, user, getIdTokenClaims, loginWithRedirect } = useAuth0();
   const [supabaseUserId, setSupabaseUserId] = useState(null);
 
   useEffect(() => {
-    let mounted = true;
-
-    const syncSession = async () => {
-      if (!isAuthenticated) {
-        if (mounted) setSupabaseUserId(null);
-        return;
-      }
-
-      try {
-        const claims = await getIdTokenClaims();
-        const idToken = claims?.__raw;
-        if (!idToken) {
-          throw new Error('Missing Auth0 id_token');
-        }
-
-        // Debug: Log token details (without exposing the actual token)
-        console.log('Auth0 ID token claims:', {
-          iss: claims.iss,
-          aud: claims.aud,
-          exp: claims.exp,
-          iat: claims.iat
-        });
-
-        // Exchange Auth0 id_token for a Supabase session so auth.uid() is available for RLS.
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'auth0',
-          token: idToken,
-        });
-        if (error) {
-          console.error('Supabase signInWithIdToken error:', error);
-          throw error;
-        }
-
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (mounted) setSupabaseUserId(userData.user?.id || null);
-      } catch (e) {
-        // If the bridge fails, require re-auth.
-        if (mounted) setSupabaseUserId(null);
-      }
-    };
-
-    syncSession();
-
-    const { data: sub } = supabase.auth.onAuthStateChange(async () => {
-      await syncSession();
-    });
-
-    return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe?.();
-    };
-  }, [isAuthenticated, getIdTokenClaims]);
+    if (isAuthenticated && user?.sub) {
+      // Use Auth0 user.sub as the user identifier for Supabase
+      // This will be used in the user_id field of the user_progress table
+      setSupabaseUserId(user.sub);
+    } else {
+      setSupabaseUserId(null);
+    }
+  }, [isAuthenticated, user]);
 
   return { isAuthenticated, loginWithRedirect, supabaseUserId };
 };

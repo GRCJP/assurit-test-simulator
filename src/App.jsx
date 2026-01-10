@@ -435,7 +435,8 @@ function AppContent({ userEmail, onLogout }) {
     getWeeklyProgress,
     getMonthlyProgress,
     adaptiveDifficulty,
-    spacedRepetition
+    spacedRepetition,
+    supabaseUserId
   } = useTestMode();
   const questions = Array.isArray(
     questionBankId === 'bankCCA' ? questionsCCA : 
@@ -444,6 +445,13 @@ function AppContent({ userEmail, onLogout }) {
     questionBankId === 'bankCCA' ? questionsCCA : 
     questionsCCP
   ) : [];
+  
+  // Log the user ID after successful login
+  useEffect(() => {
+    if (supabaseUserId) {
+      console.log('Auth0 user ID (used for Supabase):', supabaseUserId);
+    }
+  }, [supabaseUserId]);
   
   console.log('AppContent - questionBankId:', questionBankId);
   console.log('AppContent - questions length:', questions.length);

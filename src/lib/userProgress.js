@@ -1,6 +1,7 @@
 import { supabase } from './supabase.js';
 
 export async function getUserData(userId, bankId, dataType) {
+  // userId is the Auth0 user.sub value
   const { data, error } = await supabase
     .from('user_progress')
     .select('data')
@@ -14,6 +15,7 @@ export async function getUserData(userId, bankId, dataType) {
 }
 
 export async function updateUserData(userId, bankId, dataType, payload) {
+  // userId is the Auth0 user.sub value
   const { error } = await supabase
     .from('user_progress')
     .upsert({
