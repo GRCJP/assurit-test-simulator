@@ -657,11 +657,8 @@ export const TestModeProvider = ({ children }) => {
     }
   }, [startAutoBackup, stopAutoBackup]);
   const syncDataFromCloud = useCallback(async () => {
-    // Hard guard: don't attempt sync without Supabase session
-    if (!isAuthenticated || !canSyncToCloud || !userId) {
-      if (isAuthenticated && !canSyncToCloud) {
-        console.warn('Cloud sync skipped: Supabase session not established');
-      }
+    // Hard guard: only attempt cloud sync when Auth0 is authenticated and we have a user id
+    if (!isAuthenticated || !userId) {
       return;
     }
 
