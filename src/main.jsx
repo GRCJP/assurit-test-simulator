@@ -1,6 +1,6 @@
 // Main application entry point
 // Updated: 2025-01-10 - Fixed redirect URI trim
-// Build trigger: Fix Auth0 400 error
+// Build trigger: Using Supabase publishable key (sb_publishable_*)
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
