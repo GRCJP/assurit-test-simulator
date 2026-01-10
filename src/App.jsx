@@ -24,6 +24,8 @@ import questionsCCA from '../data/questions_cca.json';
 import TestComponent from './components/TestComponent';
 import { isKindleDevice, shouldShowKindleMode } from './utils/deviceDetection';
 import { useAuth0 } from '@auth0/auth0-react';
+import badgeImage from '/badge.png';
+import assertionImage from '/assertion.png';
 
 // Navigation component
 const Navigation = ({ onLogout }) => {
@@ -126,8 +128,8 @@ const Navigation = ({ onLogout }) => {
             <img 
               src={
                 questionBankId === 'bankCCA' 
-                  ? '/badge.png?v=2'
-                  : '/assertion.png?v=2'
+                  ? badgeImage
+                  : assertionImage
               }
               alt={
                 questionBankId === 'bankCCA' ? 'CMMC-CCA Badge' : 'CMMC Badge'

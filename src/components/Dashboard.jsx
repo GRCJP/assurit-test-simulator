@@ -3,6 +3,8 @@ import { useTestMode } from '../contexts/TestModeContext';
 import { Calendar, Target, TrendingUp, Award, Clock, BookOpen, FileText, Brain, Settings, Bookmark } from 'lucide-react';
 import ExamFocusedDashboard from './ExamFocusedDashboard';
 import DomainSelector from './DomainSelector';
+import badgeImage from '/badge.png';
+import assertionImage from '/assertion.png';
 
 const Dashboard = ({ questions }) => {
   const {
@@ -395,7 +397,7 @@ const Dashboard = ({ questions }) => {
             <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
               <div className="flex-shrink-0 flex justify-center sm:justify-start">
                 <img 
-                  src={questionBankId === 'bankCCA' ? "/badge.png?v=2" : "/assertion.png?v=2"} 
+                  src={questionBankId === 'bankCCA' ? badgeImage : assertionImage} 
                   alt={questionBankId === 'bankCCA' ? "CMMC Badge" : "CMMC Assertion"} 
                   className="w-32 h-32 sm:w-40 sm:h-40 object-contain"
                   onError={(e) => {
