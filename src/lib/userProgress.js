@@ -1,11 +1,13 @@
 import { supabase } from './supabase.js';
 
 export async function getUserData(userId, bankId, dataType) {
-  // userId is the Supabase UUID from supabase.auth.getUser()
+  // userId is the Auth0 user.sub value (e.g., "auth0|xxx")
   if (!userId) {
     console.warn('getUserData called without userId');
     return null;
   }
+  
+  console.log('Fetching data for user:', userId, 'bank:', bankId, 'type:', dataType);
   
   const { data, error } = await supabase
     .from('user_progress')
@@ -23,11 +25,13 @@ export async function getUserData(userId, bankId, dataType) {
 }
 
 export async function updateUserData(userId, bankId, dataType, payload) {
-  // userId is the Supabase UUID from supabase.auth.getUser()
+  // userId is the Auth0 user.sub value (e.g., "auth0|xxx")
   if (!userId) {
     console.warn('updateUserData called without userId');
     return;
   }
+  
+  console.log('Updating data for user:', userId, 'bank:', bankId, 'type:', dataType);
   
   const { error } = await supabase
     .from('user_progress')

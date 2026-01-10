@@ -16,81 +16,22 @@ export const useTestMode = () => {
 };
 
 const useSupabaseUidFromAuth0 = () => {
-  const { isAuthenticated, getIdTokenClaims, loginWithRedirect } = useAuth0();
+  const { isAuthenticated, user, getIdTokenClaims, loginWithRedirect } = useAuth0();
   const [supabaseUserId, setSupabaseUserId] = useState(null);
   const [isSupabaseSessionReady, setIsSupabaseSessionReady] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    const syncSession = async () => {
-      if (!isAuthenticated) {
-        if (mounted) {
-          setSupabaseUserId(null);
-          setIsSupabaseSessionReady(false);
-        }
-        return;
-      }
-
-      try {
-        // Get Auth0 ID token
-        const claims = await getIdTokenClaims();
-        const idToken = claims?.__raw;
-        if (!idToken) {
-          throw new Error('Missing Auth0 id_token');
-        }
-
-        // Exchange Auth0 id_token for Supabase session
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'auth0',
-          token: idToken,
-        });
-        
-        if (error) {
-          console.error('Supabase signInWithIdToken failed:', error);
-          if (mounted) {
-            setSupabaseUserId(null);
-            setIsSupabaseSessionReady(false);
-          }
-          return;
-        }
-
-        // Get the Supabase user UUID
-        const { data: userData } = await supabase.auth.getUser();
-        if (mounted && userData?.user?.id) {
-          setSupabaseUserId(userData.user.id);
-          setIsSupabaseSessionReady(true);
-          console.log('Supabase session established with UUID:', userData.user.id);
-        }
-      } catch (e) {
-        console.error('Error establishing Supabase session:', e);
-        if (mounted) {
-          setSupabaseUserId(null);
-          setIsSupabaseSessionReady(false);
-        }
-      }
-    };
-
-    syncSession();
-
-    // Listen for auth state changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        if (session?.user?.id) {
-          setSupabaseUserId(session.user.id);
-          setIsSupabaseSessionReady(true);
-        } else {
-          setSupabaseUserId(null);
-          setIsSupabaseSessionReady(false);
-        }
-      }
-    });
-
-    return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe?.();
-    };
-  }, [isAuthenticated, getIdTokenClaims]);
+    if (isAuthenticated && user?.sub) {
+      // Use Auth0 user.sub as the user identifier
+      // We'll update the RLS policies to work with this
+      setSupabaseUserId(user.sub);
+      setIsSupabaseSessionReady(true);
+      console.log('Using Auth0 user ID as identifier:', user.sub);
+    } else {
+      setSupabaseUserId(null);
+      setIsSupabaseSessionReady(false);
+    }
+  }, [isAuthenticated, user]);
 
   return { isAuthenticated, loginWithRedirect, supabaseUserId, isSupabaseSessionReady };
 };

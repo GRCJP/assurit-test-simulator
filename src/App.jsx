@@ -449,7 +449,7 @@ function AppContent({ userEmail, onLogout }) {
   // Log the user ID after successful login
   useEffect(() => {
     if (supabaseUserId) {
-      console.log('Supabase user UUID:', supabaseUserId);
+      console.log('Auth0 user ID (used for database):', supabaseUserId);
     }
   }, [supabaseUserId]);
   
