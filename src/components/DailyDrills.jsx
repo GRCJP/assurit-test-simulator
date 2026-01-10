@@ -1179,9 +1179,11 @@ const DailyDrills = ({ questions }) => {
                   // Reset session state to start fresh
                   setDailyDrillAnswers([]);
                   setDailyDrillIndex(0);
-                  setCurrentQuestionIndex(0);
-                  setShowExplanation(false);
-                  setSessionComplete(false);
+                  setHasContinuedPractice(false);
+                  // Reset other session state
+                  setSessionStartTime(null);
+                  setTotalTimeSpent(0);
+                  setIsTimerActive(false);
                 }}
                 className={`flex-1 px-4 py-2 rounded-lg transition-colors font-medium ${
                   darkMode 
