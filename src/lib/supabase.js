@@ -2,6 +2,8 @@
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+const encodeEq = (value) => `eq.${encodeURIComponent(String(value))}`;
+
 // Create a minimal client with only database operations
 const supabase = {
   from: (table) => ({
@@ -10,7 +12,13 @@ const supabase = {
         eq: (column2, value2) => ({
           eq: (column3, value3) => ({
             single: async () => {
-              const url = `${SUPABASE_URL}/rest/v1/${table}?${column}=eq.${value}&${column2}=eq.${value2}&${column3}=eq.${value3}&select=${columns}`;
+              const params = new URLSearchParams({
+                [column]: encodeEq(value),
+                [column2]: encodeEq(value2),
+                [column3]: encodeEq(value3),
+                select: String(columns),
+              });
+              const url = `${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`;
               const response = await fetch(url, {
                 headers: {
                   'apikey': SUPABASE_ANON_KEY,
@@ -30,16 +38,19 @@ const supabase = {
       })
     }),
     upsert: async (data) => {
-      const url = `${SUPABASE_URL}/rest/v1/${table}`;
+      const params = new URLSearchParams({
+        on_conflict: 'user_id,question_bank_id,data_type',
+      });
+      const url = `${SUPABASE_URL}/rest/v1/${table}?${params.toString()}`;
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'apikey': SUPABASE_ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
-          'Prefer': 'return=minimal',
+          'Prefer': 'resolution=merge-duplicates,return=minimal',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify([data]),
       });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
