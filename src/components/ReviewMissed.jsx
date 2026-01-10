@@ -47,6 +47,7 @@ const ReviewMissed = () => {
   const [selectedCount, setSelectedCount] = useState(10);
   const [sessionQuestions, setSessionQuestions] = useState([]);
   const [showScoreSummary, setShowScoreSummary] = useState(false);
+  const [sessionStarted, setSessionStarted] = useState(false);
   
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showExplanation, setShowExplanation] = useState(true); // Show explanations by default for memorization
