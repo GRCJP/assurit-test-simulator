@@ -127,7 +127,7 @@ const ExamFocusedDashboard = ({ questions: questionsProp }) => {
       setShowSettings(false);
       setTimeout(() => {
         window.location.reload();
-      }, 100);
+      }, 1000);
     }
   };
 
@@ -419,20 +419,6 @@ const ExamFocusedDashboard = ({ questions: questionsProp }) => {
               {/* Custom Goals Inputs */}
               {useCustomGoals && (
                 <>
-                  <div>
-                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                      Daily Study Goal (questions)
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={customDailyGoal}
-                      onChange={(e) => handleCustomDailyGoalChange(e.target.value)}
-                      className={`w-full px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                    />
-                  </div>
-
                   <div>
                     <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
                       Target Questions Per Day

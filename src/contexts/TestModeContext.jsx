@@ -1605,6 +1605,20 @@ export const TestModeProvider = ({ children }) => {
       domainPerformance: {},
       adjustmentFactor: 0.1,
     });
+    setProgressStreaks({
+      currentStreak: 0,
+      bestStreak: 0,
+      lastStudyDate: null,
+      studyCalendar: {},
+      weeklyGoal: 5,
+      monthlyGoal: 20,
+    });
+    setDomainMastery({
+      levels: {},
+      overallMastery: 0,
+      weakDomains: [],
+      strongDomains: [],
+    });
   };
 
   const saveTestResult = (testResult) => {
