@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 
 const SyncDiagnostic = () => {
-  const { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect, syncDataFromCloud, syncDataToCloud, progressStreaks } = useTestMode();
+  const { user, isAuthenticated, syncDataFromCloud, syncDataToCloud, progressStreaks } = useTestMode();
   const [testResults, setTestResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -25,22 +25,14 @@ const SyncDiagnostic = () => {
       return;
     }
 
-    // Test 2: Session/Token Retrieval
-    try {
-      const token = await getAccessTokenSilently();
-      addResult('Token Retrieval', true, '✅ Session token retrieved successfully', { tokenLength: token ? token.length : 0 });
-    } catch (error) {
-      addResult('Token Retrieval', false, `❌ Token failed: ${error.message}`, { error: error.toString() });
-    }
-
-    // Test 3: Environment Variables
+    // Test 2: Environment Variables
     const envVars = {
       SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
       SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing',
     };
     addResult('Environment', true, '✅ Environment variables loaded', envVars);
 
-    // Test 4: Sync From Cloud
+    // Test 3: Sync From Cloud
     try {
       await syncDataFromCloud();
       addResult('Cloud Download', true, '✅ Data synced from cloud successfully');
@@ -51,7 +43,7 @@ const SyncDiagnostic = () => {
       }
     }
 
-    // Test 5: Sync To Cloud
+    // Test 4: Sync To Cloud
     try {
       const testData = { 
         diagnosticTest: true, 
@@ -64,7 +56,7 @@ const SyncDiagnostic = () => {
       addResult('Cloud Upload', false, `❌ Cloud upload failed: ${error.message}`, { error: error.toString() });
     }
 
-    // Test 6: Local Storage
+    // Test 5: Local Storage
     try {
       const localData = localStorage.getItem('cmmc_progressStreaks');
       addResult('Local Storage', true, '✅ Local storage accessible', { hasData: !!localData });

@@ -38,6 +38,7 @@
     "pre-commit": "npm run lint && npm run protect:baseline"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.4.0",
     "@supabase/supabase-js": "^2.90.1",
     "lucide-react": "^0.560.0",
     "react": "^19.2.0",

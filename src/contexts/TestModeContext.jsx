@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import userDataSync from './UserDataSync.js';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useAuth0 } from '@auth0/auth0-react';
 import questionsCCP from '../../data/questions_ccp_combined.json';
 import questionsCCA from '../../data/questions_cca.json';
 import { supabase } from '../lib/supabase.js';
+import { getUserData, updateUserData } from '../lib/userProgress.js';
 
 const TestModeContext = createContext();
 
@@ -14,56 +15,55 @@ export const useTestMode = () => {
   return context;
 };
 
-const useSupabaseAuthShim = () => {
-  const [loading, setLoading] = useState(true);
-  const [session, setSession] = useState(null);
+const useSupabaseUidFromAuth0 = () => {
+  const { isAuthenticated, getIdTokenClaims, loginWithRedirect } = useAuth0();
+  const [supabaseUserId, setSupabaseUserId] = useState(null);
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) return;
-      if (error) console.error('Supabase getSession error:', error);
-      setSession(data.session || null);
-      setLoading(false);
-    });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, newSession) => {
-      if (!mounted) return;
-      setSession(newSession || null);
-      setLoading(false);
+    const syncSession = async () => {
+      if (!isAuthenticated) {
+        if (mounted) setSupabaseUserId(null);
+        return;
+      }
+
+      try {
+        const claims = await getIdTokenClaims();
+        const idToken = claims?.__raw;
+        if (!idToken) {
+          throw new Error('Missing Auth0 id_token');
+        }
+
+        // Exchange Auth0 id_token for a Supabase session so auth.uid() is available for RLS.
+        const { error } = await supabase.auth.signInWithIdToken({
+          provider: 'auth0',
+          token: idToken,
+        });
+        if (error) throw error;
+
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) throw userError;
+        if (mounted) setSupabaseUserId(userData.user?.id || null);
+      } catch (e) {
+        // If the bridge fails, require re-auth.
+        if (mounted) setSupabaseUserId(null);
+      }
+    };
+
+    syncSession();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async () => {
+      await syncSession();
     });
 
     return () => {
       mounted = false;
       sub?.subscription?.unsubscribe?.();
     };
-  }, []);
+  }, [isAuthenticated, getIdTokenClaims]);
 
-  const rawUser = session?.user || null;
-  // Provide a compatible shape for existing code that expects Auth0's user.sub
-  const user = rawUser ? { ...rawUser, sub: rawUser.id } : null;
-  const isAuthenticated = !!rawUser;
-
-  const getAccessTokenSilently = useCallback(async () => {
-    // Not an Auth0 token; provided for compatibility with existing call sites.
-    // Our Supabase-backed UserDataSync ignores this argument.
-    return session?.access_token || null;
-  }, [session]);
-
-  const loginWithRedirect = useCallback(async () => {
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const redirectTo = isDev
-      ? 'http://localhost:4173/assurit-test-simulator/'
-      : 'https://grcjp.github.io/assurit-test-simulator/';
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'auth0',
-      options: { redirectTo },
-    });
-    if (error) throw error;
-  }, []);
-
-  return { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect, isLoading: loading };
+  return { isAuthenticated, loginWithRedirect, supabaseUserId };
 };
 
 const keyForBank = (bankId, key) => `cmmc_${bankId}_${key}`;
@@ -214,7 +214,8 @@ const getSystemDarkModePreference = () => {
 };
 
 export const TestModeProvider = ({ children }) => {
-  const { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect } = useSupabaseAuthShim();
+  const { isAuthenticated, loginWithRedirect, supabaseUserId } = useSupabaseUidFromAuth0();
+  const userId = supabaseUserId;
   
   // Feature flags system for safe development
   const [featureFlags, setFeatureFlags] = useState(() => {
@@ -522,7 +523,7 @@ export const TestModeProvider = ({ children }) => {
 
   // Backup functions
   const createBackup = useCallback(async () => {
-    if (!isAuthenticated || !user?.sub) {
+    if (!isAuthenticated || !userId) {
       console.log('Cannot create backup: not authenticated');
       return { success: false, error: 'Not authenticated' };
     }
@@ -530,7 +531,7 @@ export const TestModeProvider = ({ children }) => {
     try {
       // Collect all relevant data for backup
       const backupData = {
-        userId: user.sub,
+        userId,
         questionBankId,
         timestamp: new Date().toISOString(),
         // Progress data
@@ -568,16 +569,16 @@ export const TestModeProvider = ({ children }) => {
       console.error('❌ Backup failed:', error);
       return { success: false, error: error.message };
     }
-  }, [isAuthenticated, user?.sub, questionBankId, progressStreaks, scoreStats, studyPlan, missedQuestions, markedQuestions, simulatedAnswers, testHistory, domainMastery, questionStats, spacedRepetition, adaptiveDifficulty, darkMode, autoDarkMode, textSize, mode]);
+  }, [isAuthenticated, userId, questionBankId, progressStreaks, scoreStats, studyPlan, missedQuestions, markedQuestions, simulatedAnswers, testHistory, domainMastery, questionStats, spacedRepetition, adaptiveDifficulty, darkMode, autoDarkMode, textSize, mode]);
 
   const restoreBackup = useCallback(async (backupKey = null) => {
-    if (!user?.sub) {
+    if (!userId) {
       console.log('Backup restore aborted: no user ID');
       return false;
     }
 
     try {
-      const keyToRestore = backupKey || localStorage.getItem(`cmmc_latest_backup_${user.sub}`);
+      const keyToRestore = backupKey || localStorage.getItem(`cmmc_latest_backup_${userId}`);
       if (!keyToRestore) {
         console.log('No backup found to restore');
         return false;
@@ -627,15 +628,15 @@ export const TestModeProvider = ({ children }) => {
       console.error('Error restoring backup:', error);
       return false;
     }
-  }, [user?.sub, questionBankId]);
+  }, [userId, questionBankId]);
 
   // Function to get current backup data for auto-backup
   const getBackupData = useCallback(() => {
-    if (!isAuthenticated || !user?.sub) {
+    if (!isAuthenticated || !userId) {
       return null;
     }
     return {
-      userId: user.sub,
+      userId,
       questionBankId,
       timestamp: new Date().toISOString(),
       progressStreaks,
@@ -658,7 +659,7 @@ export const TestModeProvider = ({ children }) => {
         lastStudyDate: localStorage.getItem('lastStudyDate'),
       }
     };
-  }, [isAuthenticated, user?.sub, questionBankId, progressStreaks, scoreStats, studyPlan, missedQuestions, markedQuestions, simulatedAnswers, testHistory, domainMastery, questionStats, spacedRepetition, adaptiveDifficulty, darkMode, autoDarkMode, textSize, mode]);
+  }, [isAuthenticated, userId, questionBankId, progressStreaks, scoreStats, studyPlan, missedQuestions, markedQuestions, simulatedAnswers, testHistory, domainMastery, questionStats, spacedRepetition, adaptiveDifficulty, darkMode, autoDarkMode, textSize, mode]);
 
   const startAutoBackup = useCallback((intervalMs = backupInterval) => {
     if (autoBackup.current && isBackupEnabled) {
@@ -687,61 +688,68 @@ export const TestModeProvider = ({ children }) => {
     }
   }, [startAutoBackup, stopAutoBackup]);
   const syncDataFromCloud = useCallback(async () => {
-    console.log('syncDataFromCloud called');
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('user?.sub:', user?.sub);
-    console.log('questionBankId:', questionBankId);
-    
-    if (!isAuthenticated || !user?.sub) {
-      console.log('Sync aborted: not authenticated or no user ID');
-      return;
-    }
-    
+    if (!isAuthenticated || !supabaseUserId) return;
+
     setIsSyncing(true);
     try {
-      console.log('Calling userDataSync.syncAllUserData...');
-      const syncedData = await userDataSync.syncAllUserData(user.sub, questionBankId, getAccessTokenSilently);
-      console.log('Synced data received:', syncedData);
-      
+      const [
+        progressStreaksRemote,
+        scoreStatsRemote,
+        studyPlanRemote,
+        domainMasteryRemote,
+        questionStatsRemote,
+        missedQuestionsRemote,
+        markedQuestionsRemote,
+        simulatedAnswersRemote,
+        testHistoryRemote,
+        spacedRepetitionRemote,
+        adaptiveDifficultyRemote,
+      ] = await Promise.all([
+        getUserData(supabaseUserId, questionBankId, 'progressStreaks'),
+        getUserData(supabaseUserId, questionBankId, 'scoreStats'),
+        getUserData(supabaseUserId, questionBankId, 'studyPlan'),
+        getUserData(supabaseUserId, questionBankId, 'domainMastery'),
+        getUserData(supabaseUserId, questionBankId, 'questionStats'),
+        getUserData(supabaseUserId, questionBankId, 'missedQuestions'),
+        getUserData(supabaseUserId, questionBankId, 'markedQuestions'),
+        getUserData(supabaseUserId, questionBankId, 'simulatedAnswers'),
+        getUserData(supabaseUserId, questionBankId, 'testHistory'),
+        getUserData(supabaseUserId, questionBankId, 'spacedRepetition'),
+        getUserData(supabaseUserId, questionBankId, 'adaptiveDifficulty'),
+      ]);
+
       // Helper to check if data is valid (not a fallback response object)
       const isValidData = (data) => {
         if (!data) return false;
-        // Check if it's a fallback response object
-        if (data.fallback === true || data.success !== undefined) return false;
         return true;
       };
       
       // Merge cloud data with local data, ALWAYS preferring cloud data for consistency
       let dataUpdated = false;
       
-      if (isValidData(syncedData.progressStreaks)) {
-        console.log('Updating progressStreaks from cloud:', syncedData.progressStreaks);
-        setProgressStreaks(syncedData.progressStreaks);
+      if (isValidData(progressStreaksRemote)) {
+        setProgressStreaks(progressStreaksRemote);
         dataUpdated = true;
       }
-      if (isValidData(syncedData.scoreStats)) {
-        console.log('Updating scoreStats from cloud:', syncedData.scoreStats);
-        setScoreStats(syncedData.scoreStats);
+      if (isValidData(scoreStatsRemote)) {
+        setScoreStats(scoreStatsRemote);
         dataUpdated = true;
       }
-      if (isValidData(syncedData.studyPlan)) {
-        console.log('Updating studyPlan from cloud:', syncedData.studyPlan);
-        setStudyPlan(syncedData.studyPlan);
+      if (isValidData(studyPlanRemote)) {
+        setStudyPlan(studyPlanRemote);
         dataUpdated = true;
       }
-      if (isValidData(syncedData.domainMastery)) {
-        console.log('Updating domainMastery from cloud:', syncedData.domainMastery);
-        setDomainMastery(syncedData.domainMastery);
+      if (isValidData(domainMasteryRemote)) {
+        setDomainMastery(domainMasteryRemote);
         dataUpdated = true;
       }
-      if (isValidData(syncedData.questionStats)) {
-        console.log('Updating questionStats from cloud:', syncedData.questionStats);
-        setQuestionStats(syncedData.questionStats);
+      if (isValidData(questionStatsRemote)) {
+        setQuestionStats(questionStatsRemote);
         dataUpdated = true;
       }
       
       // Handle missedQuestions with special logic to respect local data
-      if (isValidData(syncedData.missedQuestions)) {
+      if (isValidData(missedQuestionsRemote)) {
         // If we've already hydrated locally, don't override with cloud data unless cloud is newer
         if (hasHydratedMissed) {
           const localMissedKey = keyForBank(questionBankId, 'missedQuestions');
@@ -759,8 +767,8 @@ export const TestModeProvider = ({ children }) => {
             }
           }
           
-          const cloudCount = Array.isArray(syncedData.missedQuestions) ? syncedData.missedQuestions.length : 0;
-          const cloudUpdatedAt = syncedData.missedQuestionsUpdatedAt || 0;
+          const cloudCount = Array.isArray(missedQuestionsRemote) ? missedQuestionsRemote.length : 0;
+          const cloudUpdatedAt = 0;
           
           // Only apply cloud data if it has items AND is newer than local
           if ((cloudCount > 0) && (cloudUpdatedAt > localUpdatedAt)) {
@@ -770,21 +778,40 @@ export const TestModeProvider = ({ children }) => {
               cloudUpdatedAt, 
               localUpdatedAt 
             });
-            setMissedQuestions(syncedData.missedQuestions);
+            setMissedQuestions(missedQuestionsRemote);
             dataUpdated = true;
           } else {
-            console.log('Skipping missedQuestions cloud sync - preserving local hydrated data:', { 
-              cloudCount, 
-              localCount, 
-              reason: cloudCount === 0 ? 'empty-cloud' : 'cloud-older-or-equal' 
-            });
           }
         } else {
           // Not hydrated yet, use cloud data
-          console.log('Setting missedQuestions from cloud (not yet hydrated):', syncedData.missedQuestions?.length || 0);
-          setMissedQuestions(syncedData.missedQuestions);
+          setMissedQuestions(missedQuestionsRemote);
           dataUpdated = true;
         }
+      }
+
+      if (isValidData(markedQuestionsRemote)) {
+        setMarkedQuestions(new Map(markedQuestionsRemote));
+        dataUpdated = true;
+      }
+
+      if (isValidData(simulatedAnswersRemote)) {
+        setSimulatedAnswers(simulatedAnswersRemote);
+        dataUpdated = true;
+      }
+
+      if (isValidData(testHistoryRemote)) {
+        setTestHistory(testHistoryRemote);
+        dataUpdated = true;
+      }
+
+      if (isValidData(spacedRepetitionRemote)) {
+        setSpacedRepetition(spacedRepetitionRemote);
+        dataUpdated = true;
+      }
+
+      if (isValidData(adaptiveDifficultyRemote)) {
+        setAdaptiveDifficulty(adaptiveDifficultyRemote);
+        dataUpdated = true;
       }
       
       if (dataUpdated) {
@@ -794,32 +821,30 @@ export const TestModeProvider = ({ children }) => {
       }
       
       setLastSyncTime(new Date());
-      console.log('Data synchronized from cloud successfully');
     } catch (error) {
-      console.error('Error syncing data from cloud:', error);
     } finally {
       setIsSyncing(false);
     }
-  }, [isAuthenticated, user?.sub, questionBankId, getAccessTokenSilently]);
+  }, [isAuthenticated, supabaseUserId, questionBankId, hasHydratedMissed]);
+
+  const pendingWritesRef = useRef({});
 
   const syncDataToCloud = useCallback(async (dataType, data) => {
-    console.log(`syncDataToCloud called: ${dataType}`, data);
-    console.log('isAuthenticated:', isAuthenticated);
-    console.log('user?.sub:', user?.sub);
-    
-    if (!isAuthenticated || !user?.sub) {
-      console.log('Cloud sync aborted: not authenticated or no user ID');
-      return;
+    if (!isAuthenticated || !supabaseUserId) return;
+
+    // Debounce per dataType
+    if (pendingWritesRef.current[dataType]) {
+      clearTimeout(pendingWritesRef.current[dataType]);
     }
-    
-    try {
-      console.log(`Calling userDataSync.updateUserData for ${dataType}...`);
-      await userDataSync.updateUserData(user.sub, questionBankId, dataType, data, getAccessTokenSilently);
-      console.log(`Data synced to cloud: ${dataType}`);
-    } catch (error) {
-      console.error('Error syncing data to cloud:', error);
-    }
-  }, [isAuthenticated, user?.sub, questionBankId, getAccessTokenSilently]);
+
+    pendingWritesRef.current[dataType] = setTimeout(async () => {
+      try {
+        await updateUserData(supabaseUserId, questionBankId, dataType, data);
+      } catch (_e) {
+        // no retry storm
+      }
+    }, 750);
+  }, [isAuthenticated, supabaseUserId, questionBankId]);
 
   // Debug function to test sync
   const debugSync = useCallback(async () => {
@@ -829,22 +854,14 @@ export const TestModeProvider = ({ children }) => {
       console.log('User is not authenticated');
       return;
     }
-    
-    console.log('User info:', user);
+
+    console.log('Supabase user id:', userId);
     console.log('Current progressStreaks:', progressStreaks);
-    
-    // Test getting a session token (shim)
-    try {
-      const token = await getAccessTokenSilently();
-      console.log('Token obtained successfully:', token ? 'YES' : 'NO');
-    } catch (error) {
-      console.error('Error getting token:', error);
-    }
     
     // Test sync
     await syncDataFromCloud();
     console.log('=== DEBUG SYNC END ===');
-  }, [isAuthenticated, user, progressStreaks, getAccessTokenSilently, syncDataFromCloud]);
+  }, [isAuthenticated, userId, progressStreaks, syncDataFromCloud]);
 
   // Function to reset to dashboard (useful for navigation and redirects)
   const resetToDashboard = useCallback(() => {
@@ -936,22 +953,17 @@ export const TestModeProvider = ({ children }) => {
     if (!isAuthenticated) return;
 
     const healthCheckInterval = setInterval(() => {
-      if (userDataSync && typeof userDataSync.checkHealth === 'function') {
-        const isHealthy = userDataSync.checkHealth();
-        if (!isHealthy) {
-          console.warn('⚠️ UserDataSync health check failed');
-        }
-      }
+      // No-op: kept for parity with previous behavior, but no legacy sync layer remains.
     }, 5 * 60 * 1000); // Check every 5 minutes
 
     return () => {
       clearInterval(healthCheckInterval);
     };
-  }, [isAuthenticated, userDataSync]);
+  }, [isAuthenticated]);
 
   // Migrate old question bank data and ensure proper sync for current bank
   const migrateOldData = useCallback(async () => {
-    if (!isAuthenticated || !user?.sub) return;
+    if (!isAuthenticated || !userId) return;
     
     console.log(`🔄 Checking for old question bank data to migrate... (current bank: ${questionBankId})`);
     
@@ -970,12 +982,12 @@ export const TestModeProvider = ({ children }) => {
         
         for (const oldBankId of oldBanks) {
           // Check cloud data for old banks
-          const cloudData = await userDataSync.getUserData(user.sub, oldBankId, 'missedQuestions', getAccessTokenSilently);
-          if (cloudData && cloudData.data && cloudData.data.length > 0) {
-            console.log(`Found ${cloudData.data.length} missed questions in old bank ${oldBankId}`);
+          const cloudData = await getUserData(userId, oldBankId, 'missedQuestions');
+          if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
+            console.log(`Found ${cloudData.length} missed questions in old bank ${oldBankId}`);
             
             // Filter and mark test questions
-            const testQuestions = cloudData.data.filter(q => {
+            const testQuestions = cloudData.filter(q => {
               // For bank206, these are all test questions
               if (oldBankId === 'bank206') return true;
               // For bank170, these are practice questions (don't migrate to memory section)
@@ -993,7 +1005,7 @@ export const TestModeProvider = ({ children }) => {
           console.log(`Migrating ${Object.keys(migratedData).length} questions to new CCP bank...`);
           
           // Save migrated data to new CCP bank
-          await userDataSync.updateUserData(user.sub, 'bankCCP', 'missedQuestions', migratedData, getAccessTokenSilently);
+          await updateUserData(userId, 'bankCCP', 'missedQuestions', migratedData);
           
           // Also update local state
           setMissedQuestions(Object.values(migratedData));
@@ -1011,20 +1023,20 @@ export const TestModeProvider = ({ children }) => {
         console.log('CCA mode - ensuring proper sync without migration');
         
         // For CCA, just ensure data is properly synced
-        const currentData = await userDataSync.getUserData(user.sub, 'bankCCA', 'missedQuestions', getAccessTokenSilently);
-        if (currentData && currentData.data) {
-          console.log(`CCA sync: Found ${currentData.data.length} missed questions in cloud`);
-          setMissedQuestions(currentData.data);
+        const currentData = await getUserData(userId, 'bankCCA', 'missedQuestions');
+        if (currentData && Array.isArray(currentData)) {
+          console.log(`CCA sync: Found ${currentData.length} missed questions in cloud`);
+          setMissedQuestions(currentData);
         }
       }
     } catch (error) {
       console.error('❌ Error during migration/sync:', error);
     }
-  }, [isAuthenticated, user?.sub, getAccessTokenSilently, userDataSync, setMissedQuestions, questionBankId, syncDataFromCloud]);
+  }, [isAuthenticated, userId, setMissedQuestions, questionBankId, syncDataFromCloud]);
 
   // Sync data from cloud on mount and when auth state changes
   useEffect(() => {
-    if (isAuthenticated && user?.sub) {
+    if (isAuthenticated && userId) {
       console.log('🔄 Triggering cloud data sync on auth change');
       syncDataFromCloud();
       
@@ -1036,11 +1048,11 @@ export const TestModeProvider = ({ children }) => {
         });
       }
     }
-  }, [isAuthenticated, user?.sub, questionBankId, syncDataFromCloud, migrateOldData]);
+  }, [isAuthenticated, userId, questionBankId, syncDataFromCloud, migrateOldData]);
 
   // Sync data when user authenticates or bank changes
   useEffect(() => {
-    if (isAuthenticated && user?.sub) {
+    if (isAuthenticated && userId) {
       console.log(`🔄 Bank changed to ${questionBankId} - forcing sync...`);
       syncDataFromCloud();
       
@@ -1055,7 +1067,7 @@ export const TestModeProvider = ({ children }) => {
       // Ensure dashboard is the first thing users see after login
       resetToDashboard();
     }
-  }, [isAuthenticated, user?.sub, questionBankId, syncDataFromCloud, migrateOldData]);
+  }, [isAuthenticated, userId, questionBankId, syncDataFromCloud, migrateOldData]);
 
   // IMPORTANT: For authenticated users, cloud sync takes priority
   // localStorage is only used for non-authenticated users or as fallback
@@ -1070,7 +1082,7 @@ export const TestModeProvider = ({ children }) => {
 
   // Start auto-backup when user is authenticated and study plan is set
   useEffect(() => {
-    if (isAuthenticated && user?.sub && isBackupEnabled) {
+    if (isAuthenticated && userId && isBackupEnabled) {
       // Start auto-backup with current interval
       startAutoBackup(backupInterval);
       
@@ -1087,15 +1099,15 @@ export const TestModeProvider = ({ children }) => {
         autoBackup.current.stop();
       }
     };
-  }, [isAuthenticated, user?.sub, isBackupEnabled, backupInterval, studyPlan]);
+  }, [isAuthenticated, userId, isBackupEnabled, backupInterval, studyPlan]);
 
   // Create backup when study plan is updated
   useEffect(() => {
-    if (isAuthenticated && user?.sub && studyPlan && studyPlan.testDate) {
+    if (isAuthenticated && userId && studyPlan && studyPlan.testDate) {
       console.log('Study plan updated, creating backup');
       createBackup();
     }
-  }, [studyPlan?.testDate, studyPlan?.dailyGoal, studyPlan?.targetQuestionsPerDay, isAuthenticated, user?.sub]);
+  }, [studyPlan?.testDate, studyPlan?.dailyGoal, studyPlan?.targetQuestionsPerDay, isAuthenticated, userId]);
 
   // Load bank-scoped state whenever the bank changes (only if not authenticated)
   useEffect(() => {
@@ -2875,10 +2887,6 @@ export const TestModeProvider = ({ children }) => {
     syncDataFromCloud,
     syncDataToCloud,
     debugSync,
-    // Manual sync functionality
-    exportAllData: userDataSync.exportAllData.bind(userDataSync),
-    importAllData: userDataSync.importAllData.bind(userDataSync),
-    testSyncStatus: userDataSync.testSyncStatus.bind(userDataSync),
     // Backup functionality
     isBackupEnabled,
     backupInterval,

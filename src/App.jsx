@@ -23,7 +23,7 @@ import questionsCCA from '../data/questions_cca.json';
 
 import TestComponent from './components/TestComponent';
 import { isKindleDevice, shouldShowKindleMode } from './utils/deviceDetection';
-import { supabase } from './lib/supabase.js';
+import { useAuth0 } from '@auth0/auth0-react';
 
 // Navigation component
 const Navigation = ({ onLogout }) => {
@@ -321,8 +321,7 @@ const Navigation = ({ onLogout }) => {
   );
 };
 function App() {
-  const [authLoading, setAuthLoading] = useState(true);
-  const [session, setSession] = useState(null);
+  const { isLoading, isAuthenticated, user, loginWithRedirect, logout, error } = useAuth0();
   const isLocalhost = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
@@ -334,62 +333,7 @@ function App() {
     localStorage.getItem('cmmc_bypass_auth') === 'true'
   ), []);
 
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) return;
-      if (error) {
-        console.error('Supabase getSession error:', error);
-      }
-      setSession(data.session || null);
-      setAuthLoading(false);
-    });
-
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (!mounted) return;
-      setSession(newSession || null);
-      setAuthLoading(false);
-    });
-
-    return () => {
-      mounted = false;
-      subscription?.subscription?.unsubscribe?.();
-    };
-  }, []);
-
-  const isAuthenticated = !!session?.user;
-  const user = session?.user || null;
-
-  const signIn = async () => {
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const redirectTo = isDev
-      ? 'http://localhost:4173/assurit-test-simulator/'
-      : 'https://grcjp.github.io/assurit-test-simulator/';
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'auth0',
-      options: { redirectTo },
-    });
-    if (error) throw error;
-  };
-
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  };
-
-  const [loadingTooLong, setLoadingTooLong] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading) {
-      setLoadingTooLong(false);
-      return undefined;
-    }
-    const t = setTimeout(() => setLoadingTooLong(true), 2500);
-    return () => clearTimeout(t);
-  }, [authLoading]);
-
-  if (authLoading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -400,17 +344,26 @@ function App() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">Error</div>
+          <p className="text-gray-600">{error.message}</p>
+        </div>
+      </div>
+    );
+  }
+
   if (bypassAuth) {
     return (
-      <TestModeProvider>
-        <AppContent
-          userEmail={user?.email || ''}
-          onLogout={() => {
-            localStorage.removeItem('cmmc_bypass_auth');
-            window.location.reload();
-          }}
-        />
-      </TestModeProvider>
+      <AppContent
+        userEmail={user?.email || ''}
+        onLogout={() => {
+          localStorage.removeItem('cmmc_bypass_auth');
+          window.location.reload();
+        }}
+      />
     );
   }
 
@@ -424,7 +377,7 @@ function App() {
           </p>
           <button
             type="button"
-            onClick={() => signIn()}
+            onClick={() => loginWithRedirect()}
             className="mt-6 w-full px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
           >
             Sign in
@@ -447,7 +400,7 @@ function App() {
   }
 
   return (
-    <AppContent userEmail={user?.email || ''} onLogout={() => signOut()} />
+    <AppContent userEmail={user?.email || ''} onLogout={() => logout({ logoutParams: { returnTo: window.location.origin } })} />
   );
 }
 
