@@ -302,11 +302,11 @@ const DailyDrills = ({ questions }) => {
     // Get question statistics for smart selection
     const availableQuestions = availableIds.map(id => questions.find(q => q.id === id)).filter(Boolean);
     const availableQuestionStats = availableQuestions.map(q => {
-      const stats = getQuestionStats(q.id);
-      const isSeen = stats.attempts > 0;
-      const isMissed = stats.missed > 0;
-      const lastWrongAt = stats.lastWrongAt || 0;
-      const attempts = stats.attempts || 0;
+      const stats = getQuestionStats ? (getQuestionStats(q.id) || null) : null;
+      const attempts = stats?.attempts || 0;
+      const isSeen = attempts > 0;
+      const isMissed = (stats?.missed || 0) > 0;
+      const lastWrongAt = stats?.lastWrongAt || 0;
       
       return { ...q, isSeen, isMissed, lastWrongAt, attempts };
     });
