@@ -190,13 +190,13 @@ class UserDataSync {
     }));
   }
 
-  // Validate token configuration before making requests
-  validateTokenConfig() {
-    const requiredEnvVars = ['VITE_AUTH0_DOMAIN', 'VITE_AUTH0_CLIENT_ID'];
+  // Validate environment configuration
+  validateConfig() {
+    const requiredEnvVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_PUBLISHABLE_KEY'];
     const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
     
     if (missingVars.length > 0) {
-      console.error('❌ Missing required Auth0 environment variables:', missingVars);
+      console.error('❌ Missing required Supabase environment variables:', missingVars);
       return false;
     }
     
