@@ -1,12 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Use anonymous/public key for browser (not secret key)
-const supabaseUrl = 'https://szyjviaolnaoywopfrqp.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5anZpYW9sbmFveW93cGZycXAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNjQ4Njg1MSwiZXhwIjoyMDUyMDYyODUxfQ.sb_publishable_Xf-epctMBmqxCgCAjmnf7A_qF2ihuf4';
+// Use environment variables with anonymous key for browser
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-console.log('🔧 Supabase Config - Using anonymous key for browser');
+console.log('🔧 Supabase Config - Using environment variables');
 console.log('URL:', supabaseUrl);
 console.log('Key type: Anonymous/Public (browser-safe)');
+console.log('Key loaded:', supabaseAnonKey ? 'Yes' : 'No');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
