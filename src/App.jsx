@@ -15,7 +15,6 @@ import PracticeMode from './components/PracticeMode';
 import DomainPractice from './components/DomainPractice';
 import ComprehensiveProgress from './components/ComprehensiveProgress';
 import ErrorBoundary from './components/ErrorBoundary';
-import SyncDiagnostic from './components/SyncDiagnostic';
 import CrossDeviceSync from './components/CrossDeviceSync';
 
 import questionsCCP from '../data/questions_ccp_combined.json';
@@ -512,9 +511,6 @@ function AppContent({ userEmail, onLogout }) {
           </>
         )}
       </main>
-      
-      {/* Sync Diagnostic - Always available for testing cross-device sync */}
-      <SyncDiagnostic />
       
       {/* Cross-Device Sync - Manual export/import for immediate functionality */}
       <CrossDeviceSync />
