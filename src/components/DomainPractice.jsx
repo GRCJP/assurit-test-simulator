@@ -24,6 +24,15 @@ const DomainPractice = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
 
+  // Debug logging
+  console.log('🎯 DomainPractice: Component state:', {
+    domainFilteredQuestionsLength: domainFilteredQuestions?.length || 0,
+    domainFilterType,
+    selectedDomains,
+    currentIndex,
+    hasQuestions: !!domainFilteredQuestions && domainFilteredQuestions.length > 0
+  });
+
   const currentQuestion = domainFilteredQuestions[currentIndex];
   const currentAnswer = answers[currentQuestion?.id] || { selectedChoiceId: null, isCorrect: null };
 
@@ -93,7 +102,7 @@ const DomainPractice = () => {
     setSessionComplete(false);
   };
 
-  if (!currentQuestion && !sessionComplete) {
+  if (domainFilteredQuestions.length === 0 && !sessionComplete) {
     return (
       <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gray-50'} flex items-center justify-center p-4`}>
         <div className={`text-center ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -108,8 +117,22 @@ const DomainPractice = () => {
               darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
           >
-            Back to Domain Selection
+            Back to Dashboard
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion && !sessionComplete) {
+    return (
+      <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gray-50'} flex items-center justify-center p-4`}>
+        <div className={`text-center ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          <div className="text-6xl mb-4">🔄</div>
+          <h2 className="text-2xl font-bold mb-2">Loading Questions...</h2>
+          <p className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+            Preparing domain practice questions...
+          </p>
         </div>
       </div>
     );
