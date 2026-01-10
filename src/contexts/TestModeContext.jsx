@@ -701,23 +701,23 @@ export const TestModeProvider = ({ children }) => {
       let dataUpdated = false;
       
       if (isValidData(progressStreaksRemote)) {
-        setProgressStreaks(progressStreaksRemote);
+        setProgressStreaks(normalizeRestoredData(progressStreaksRemote, 'progressStreaks'));
         dataUpdated = true;
       }
       if (isValidData(scoreStatsRemote)) {
-        setScoreStats(scoreStatsRemote);
+        setScoreStats(normalizeRestoredData(scoreStatsRemote, 'scoreStats'));
         dataUpdated = true;
       }
       if (isValidData(studyPlanRemote)) {
-        setStudyPlan(studyPlanRemote);
+        setStudyPlan(normalizeRestoredData(studyPlanRemote, 'studyPlan'));
         dataUpdated = true;
       }
       if (isValidData(domainMasteryRemote)) {
-        setDomainMastery(domainMasteryRemote);
+        setDomainMastery(normalizeRestoredData(domainMasteryRemote, 'domainMastery'));
         dataUpdated = true;
       }
       if (isValidData(questionStatsRemote)) {
-        setQuestionStats(questionStatsRemote);
+        setQuestionStats(normalizeRestoredData(questionStatsRemote, 'questionStats'));
         dataUpdated = true;
       }
       
@@ -751,39 +751,39 @@ export const TestModeProvider = ({ children }) => {
               cloudUpdatedAt, 
               localUpdatedAt 
             });
-            setMissedQuestions(missedQuestionsRemote);
+            setMissedQuestions(normalizeRestoredData(missedQuestionsRemote, 'missedQuestions'));
             dataUpdated = true;
           } else {
           }
         } else {
           // Not hydrated yet, use cloud data
-          setMissedQuestions(missedQuestionsRemote);
+          setMissedQuestions(normalizeRestoredData(missedQuestionsRemote, 'missedQuestions'));
           dataUpdated = true;
         }
       }
 
       if (isValidData(markedQuestionsRemote)) {
-        setMarkedQuestions(new Map(markedQuestionsRemote));
+        setMarkedQuestions(new Map(normalizeRestoredData(markedQuestionsRemote, 'markedQuestions')));
         dataUpdated = true;
       }
 
       if (isValidData(simulatedAnswersRemote)) {
-        setSimulatedAnswers(simulatedAnswersRemote);
+        setSimulatedAnswers(normalizeRestoredData(simulatedAnswersRemote, 'simulatedAnswers'));
         dataUpdated = true;
       }
 
       if (isValidData(testHistoryRemote)) {
-        setTestHistory(testHistoryRemote);
+        setTestHistory(normalizeRestoredData(testHistoryRemote, 'testHistory'));
         dataUpdated = true;
       }
 
       if (isValidData(spacedRepetitionRemote)) {
-        setSpacedRepetition(spacedRepetitionRemote);
+        setSpacedRepetition(normalizeRestoredData(spacedRepetitionRemote, 'spacedRepetition'));
         dataUpdated = true;
       }
 
       if (isValidData(adaptiveDifficultyRemote)) {
-        setAdaptiveDifficulty(adaptiveDifficultyRemote);
+        setAdaptiveDifficulty(normalizeRestoredData(adaptiveDifficultyRemote, 'adaptiveDifficulty'));
         dataUpdated = true;
       }
       
@@ -1086,6 +1086,119 @@ export const TestModeProvider = ({ children }) => {
     }
   }, [studyPlan?.testDate, studyPlan?.dailyGoal, studyPlan?.targetQuestionsPerDay, isAuthenticated, userId]);
 
+  // Normalization and migration layer for restored user state
+  const normalizeRestoredData = useCallback((data, dataType) => {
+    // Normalize arrays: replace null entries with safe defaults
+    if (Array.isArray(data)) {
+      return data.map((item, index) => {
+        if (item == null) {
+          // Return safe defaults based on data type
+          switch (dataType) {
+            case 'dailyDrillAnswers':
+              return { attempts: 0, correct: 0, missed: 0, lastWrongAt: null };
+            case 'practiceAnswers':
+            case 'simulatedOrder':
+            case 'dailyDrillOrder':
+            case 'testHistory':
+            case 'missedQuestions':
+            case 'missedQueue':
+              return null; // These can be null, will be filtered out later
+            case 'progressStreaks':
+              return { currentStreak: 0, bestStreak: 0, lastStudyDate: null, studyCalendar: {}, weeklyGoal: 5, monthlyGoal: 20 };
+            case 'scoreStats':
+              return { totalQuestions: 0, correctAnswers: 0, currentStreak: 0, bestStreak: 0, dailyStreak: 0, lastStudyDate: null, weeklyAccuracy: [] };
+            case 'domainMastery':
+              return { levels: {}, overallMastery: 0, weakDomains: [], strongDomains: [] };
+            case 'spacedRepetition':
+              return { queue: [], mastered: [], lastReviewDate: null };
+            case 'adaptiveDifficulty':
+              return { currentLevel: 1, recentPerformance: [], domainPerformance: {}, adjustmentFactor: 0.1 };
+            default:
+              return {};
+          }
+        }
+        
+        // Ensure required fields exist for objects
+        if (typeof item === 'object' && item !== null) {
+          switch (dataType) {
+            case 'dailyDrillAnswers':
+              return {
+                attempts: item.attempts ?? 0,
+                correct: item.correct ?? 0,
+                missed: item.missed ?? 0,
+                lastWrongAt: item.lastWrongAt ?? null
+              };
+            case 'scoreStats':
+              return {
+                totalQuestions: item.totalQuestions ?? 0,
+                correctAnswers: item.correctAnswers ?? 0,
+                currentStreak: item.currentStreak ?? 0,
+                bestStreak: item.bestStreak ?? 0,
+                dailyStreak: item.dailyStreak ?? 0,
+                lastStudyDate: item.lastStudyDate ?? null,
+                weeklyAccuracy: Array.isArray(item.weeklyAccuracy) ? item.weeklyAccuracy : []
+              };
+            case 'progressStreaks':
+              return {
+                currentStreak: item.currentStreak ?? 0,
+                bestStreak: item.bestStreak ?? 0,
+                lastStudyDate: item.lastStudyDate ?? null,
+                studyCalendar: typeof item.studyCalendar === 'object' && item.studyCalendar !== null ? item.studyCalendar : {},
+                weeklyGoal: item.weeklyGoal ?? 5,
+                monthlyGoal: item.monthlyGoal ?? 20
+              };
+            case 'domainMastery':
+              return {
+                levels: typeof item.levels === 'object' && item.levels !== null ? item.levels : {},
+                overallMastery: item.overallMastery ?? 0,
+                weakDomains: Array.isArray(item.weakDomains) ? item.weakDomains : [],
+                strongDomains: Array.isArray(item.strongDomains) ? item.strongDomains : []
+              };
+            case 'spacedRepetition':
+              return {
+                queue: Array.isArray(item.queue) ? item.queue : [],
+                mastered: Array.isArray(item.mastered) ? item.mastered : [],
+                lastReviewDate: item.lastReviewDate ?? null
+              };
+            case 'adaptiveDifficulty':
+              return {
+                currentLevel: item.currentLevel ?? 1,
+                recentPerformance: Array.isArray(item.recentPerformance) ? item.recentPerformance : [],
+                domainPerformance: typeof item.domainPerformance === 'object' && item.domainPerformance !== null ? item.domainPerformance : {},
+                adjustmentFactor: item.adjustmentFactor ?? 0.1
+              };
+            default:
+              return item;
+          }
+        }
+        
+        return item;
+      }).filter(item => item !== null); // Filter out null entries that shouldn't exist
+    }
+    
+    // Normalize objects
+    if (typeof data === 'object' && data !== null) {
+      switch (dataType) {
+        case 'studyPlan':
+          return {
+            testDate: data.testDate ?? null,
+            targetQuestionsPerDay: data.targetQuestionsPerDay ?? 15,
+            dailyGoal: data.dailyGoal ?? 15,
+            completedToday: data.completedToday ?? 0,
+            totalQuestionsNeeded: data.totalQuestionsNeeded ?? getQuestionCount('bankCCP'),
+            questionsCompleted: data.questionsCompleted ?? 0,
+            studyDaysRemaining: data.studyDaysRemaining ?? 0
+          };
+        case 'simulatedAnswers':
+          return data; // Object with question IDs as keys
+        default:
+          return data;
+      }
+    }
+    
+    return data;
+  }, []);
+
   // Load bank-scoped state whenever the bank changes (only if not authenticated)
   useEffect(() => {
     if (!isAuthenticated) {
@@ -1096,38 +1209,34 @@ export const TestModeProvider = ({ children }) => {
       const savedMissedMeta = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'missedMeta')) || '{}');
       const savedMarked = new Map(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'markedQuestions')) || '[]'));
       const savedPracticeIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'practiceIndex')) || '0');
-      const savedPracticeAnswers = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'practiceAnswers')) || '[]');
+      const savedPracticeAnswers = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'practiceAnswers')) || '[]'), 'practiceAnswers');
       const savedDailyDrillIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillIndex')) || '0');
-      const savedDailyDrillOrder = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillOrder')) || '[]');
-      const savedDailyDrillAnswers = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillAnswers')) || '[]');
-      
-      // Normalize daily drill answers to prevent null crashes
-      const normalizedDailyDrillAnswers = Array.isArray(savedDailyDrillAnswers) 
-        ? savedDailyDrillAnswers.map(item => item == null ? { attempts: 0, correct: 0, missed: 0, lastWrongAt: null } : item)
-        : [];
+      const savedDailyDrillOrder = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillOrder')) || '[]'), 'dailyDrillOrder');
+      const savedDailyDrillAnswers = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillAnswers')) || '[]'), 'dailyDrillAnswers');
       
       // Load schema version for future migrations
-      const savedSchemaVersion = parseInt(localStorage.getItem(keyForBank(questionBankId, 'schemaVersion')) || '1');
+      const savedSchemaVersion = parseInt(localStorage.getItem(keyForBank(questionBankId, 'schemaVersion')) || '2');
       
       // Migration logic for older schemas
-      let migratedDailyDrillAnswers = normalizedDailyDrillAnswers;
-      if (savedSchemaVersion < 1) {
-        // Add migration logic for version 0 -> 1 if needed
-        migratedDailyDrillAnswers = normalizedDailyDrillAnswers;
+      let migratedDailyDrillAnswers = savedDailyDrillAnswers;
+      if (savedSchemaVersion < 2) {
+        // Migration to schema version 2: ensure all dailyDrillAnswers have required fields
+        migratedDailyDrillAnswers = normalizeRestoredData(savedDailyDrillAnswers, 'dailyDrillAnswers');
       }
+      
       const savedRapidIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'rapidIndex')) || '0');
-      const savedTestHistory = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'testHistory')) || '[]');
+      const savedTestHistory = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'testHistory')) || '[]'), 'testHistory');
       const savedSimulatedIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'simulatedIndex')) || '0');
-      const savedSimulatedOrder = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'simulatedOrder')) || '[]');
-      const savedSimulatedAnswers = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'simulatedAnswers')) || '{}');
+      const savedSimulatedOrder = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'simulatedOrder')) || '[]'), 'simulatedOrder');
+      const savedSimulatedAnswers = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'simulatedAnswers')) || '{}'), 'simulatedAnswers');
       const savedSimulatedTimeRemaining = parseInt(localStorage.getItem(keyForBank(questionBankId, 'simulatedTimeRemaining')) || '7200');
       const savedSimulatedTimerActive = localStorage.getItem(keyForBank(questionBankId, 'simulatedTimerActive')) === 'true';
-      const savedScoreStats = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'scoreStats')) || '{"totalQuestions":0,"correctAnswers":0,"currentStreak":0,"bestStreak":0,"dailyStreak":0,"lastStudyDate":null,"weeklyAccuracy":[]}');
-      const savedStudyPlan = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'studyPlan')) || '{"testDate":null,"targetQuestionsPerDay":15,"dailyGoal":15,"completedToday":0,"totalQuestionsNeeded":' + getQuestionCount(questionBankId) + ',"questionsCompleted":0,"studyDaysRemaining":0}');
-      const savedSpacedRepetition = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'spacedRepetition')) || '{"queue":[],"mastered":[],"lastReviewDate":null}');
-      const savedAdaptiveDifficulty = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'adaptiveDifficulty')) || '{"currentLevel":1,"recentPerformance":[],"domainPerformance":{},"adjustmentFactor":0.1}');
-      const savedProgressStreaks = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'progressStreaks')) || '{"currentStreak":0,"bestStreak":0,"lastStudyDate":null,"studyCalendar":{},"weeklyGoal":5,"monthlyGoal":20}');
-      const savedDomainMastery = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'domainMastery')) || '{"levels":{},"overallMastery":0,"weakDomains":[],"strongDomains":[]}');
+      const savedScoreStats = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'scoreStats')) || '{"totalQuestions":0,"correctAnswers":0,"currentStreak":0,"bestStreak":0,"dailyStreak":0,"lastStudyDate":null,"weeklyAccuracy":[]}'), 'scoreStats');
+      const savedStudyPlan = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'studyPlan')) || '{"testDate":null,"targetQuestionsPerDay":15,"dailyGoal":15,"completedToday":0,"totalQuestionsNeeded":' + getQuestionCount(questionBankId) + ',"questionsCompleted":0,"studyDaysRemaining":0}'), 'studyPlan');
+      const savedSpacedRepetition = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'spacedRepetition')) || '{"queue":[],"mastered":[],"lastReviewDate":null}'), 'spacedRepetition');
+      const savedAdaptiveDifficulty = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'adaptiveDifficulty')) || '{"currentLevel":1,"recentPerformance":[],"domainPerformance":{},"adjustmentFactor":0.1}'), 'adaptiveDifficulty');
+      const savedProgressStreaks = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'progressStreaks')) || '{"currentStreak":0,"bestStreak":0,"lastStudyDate":null,"studyCalendar":{},"weeklyGoal":5,"monthlyGoal":20}'), 'progressStreaks');
+      const savedDomainMastery = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'domainMastery')) || '{"levels":{},"overallMastery":0,"weakDomains":[],"strongDomains":[]}'), 'domainMastery');
 
       setMissedQueue(savedMissedQueue);
       setMissedMeta(savedMissedMeta);
@@ -1137,7 +1246,7 @@ export const TestModeProvider = ({ children }) => {
       setDailyDrillIndex(Number.isFinite(savedDailyDrillIndex) ? savedDailyDrillIndex : 0);
       setDailyDrillOrder(Array.isArray(savedDailyDrillOrder) ? savedDailyDrillOrder : []);
       setDailyDrillAnswers(migratedDailyDrillAnswers);
-      setSchemaVersion(savedSchemaVersion || 1);
+      setSchemaVersion(savedSchemaVersion || 2);
       setRapidIndex(savedRapidIndex);
       setTestHistory(savedTestHistory);
       setSimulatedIndex(Number.isFinite(savedSimulatedIndex) ? savedSimulatedIndex : 0);
