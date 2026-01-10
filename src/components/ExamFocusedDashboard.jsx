@@ -33,6 +33,49 @@ const ExamFocusedDashboard = ({ questions: questionsProp }) => {
   } = useTestMode();
 
   const [showSettings, setShowSettings] = useState(false);
+  const [studyDays, setStudyDays] = useState(15);
+  const [useCustomGoals, setUseCustomGoals] = useState(false);
+  const [customDailyGoal, setCustomDailyGoal] = useState(15);
+  const [customTargetQuestions, setCustomTargetQuestions] = useState(15);
+
+  // Helper functions
+  const computeAutoGoals = (days) => {
+    const totalQuestions = getQuestionBankTotal() || 500;
+    const dailyGoal = Math.ceil(totalQuestions / days);
+    const targetQuestions = dailyGoal;
+    return { dailyGoal, targetQuestions };
+  };
+
+  const handleStudyDaysChange = (days) => {
+    setStudyDays(days);
+    if (!useCustomGoals) {
+      const { dailyGoal, targetQuestions } = computeAutoGoals(days);
+      setDailyGoal(dailyGoal);
+      setTargetQuestionsPerDay(targetQuestions);
+    }
+  };
+
+  const handleCustomToggle = (enabled) => {
+    setUseCustomGoals(enabled);
+    if (!enabled) {
+      // Switch to auto-computed goals
+      const { dailyGoal, targetQuestions } = computeAutoGoals(studyDays);
+      setDailyGoal(dailyGoal);
+      setTargetQuestionsPerDay(targetQuestions);
+    }
+  };
+
+  const handleCustomDailyGoalChange = (value) => {
+    const validValue = Math.max(1, parseInt(value) || 1);
+    setCustomDailyGoal(validValue);
+    setDailyGoal(validValue);
+  };
+
+  const handleCustomTargetQuestionsChange = (value) => {
+    const validValue = Math.max(1, parseInt(value) || 1);
+    setCustomTargetQuestions(validValue);
+    setTargetQuestionsPerDay(validValue);
+  };
 
   // Debug: Check if questions are available in ExamFocusedDashboard
   console.log('🏠 ExamFocusedDashboard: Questions check:', {
@@ -327,35 +370,87 @@ const ExamFocusedDashboard = ({ questions: questionsProp }) => {
                 />
               </div>
 
-              {/* Daily Goal */}
+              {/* Study Days */}
               <div>
                 <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                  Daily Study Goal (questions)
+                  Study Days
                 </label>
-                <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={studyPlan.dailyGoal || 15}
-                  onChange={(e) => setDailyGoal(parseInt(e.target.value) || 15)}
+                <select
+                  value={studyDays}
+                  onChange={(e) => handleStudyDaysChange(parseInt(e.target.value))}
                   className={`w-full px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
-                />
+                >
+                  <option value={7}>7 days</option>
+                  <option value={10}>10 days</option>
+                  <option value={15}>15 days</option>
+                  <option value={20}>20 days</option>
+                  <option value={30}>30 days</option>
+                  <option value={45}>45 days</option>
+                  <option value={60}>60 days</option>
+                </select>
               </div>
 
-              {/* Target Questions Per Day */}
-              <div>
-                <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
-                  Target Questions Per Day
-                </label>
+              {/* Custom Goals Checkbox */}
+              <div className="flex items-center space-x-3">
                 <input
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={studyPlan.targetQuestionsPerDay || 15}
-                  onChange={(e) => setTargetQuestionsPerDay(parseInt(e.target.value) || 15)}
-                  className={`w-full px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                  type="checkbox"
+                  id="customGoals"
+                  checked={useCustomGoals}
+                  onChange={(e) => handleCustomToggle(e.target.checked)}
+                  className={`w-4 h-4 rounded border ${darkMode ? 'bg-gray-700 border-gray-600 text-purple-500' : 'bg-white border-gray-300 text-purple-600'} focus:ring-purple-500`}
                 />
+                <label htmlFor="customGoals" className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Use custom daily goals
+                </label>
               </div>
+
+              {/* Auto-computed goals display */}
+              {!useCustomGoals && (
+                <div className={`p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <p className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Auto-computed goals:
+                  </p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Daily goal: {computeAutoGoals(studyDays).dailyGoal} questions
+                  </p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    Target questions: {computeAutoGoals(studyDays).targetQuestions} questions
+                  </p>
+                </div>
+              )}
+
+              {/* Custom Goals Inputs */}
+              {useCustomGoals && (
+                <>
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+                      Daily Study Goal (questions)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={customDailyGoal}
+                      onChange={(e) => handleCustomDailyGoalChange(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-2 ${darkMode ? 'text-[#9CA3AF]' : 'text-[#6B7280]'}`}>
+                      Target Questions Per Day
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={customTargetQuestions}
+                      onChange={(e) => handleCustomTargetQuestionsChange(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-lg border ${darkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'} focus:outline-none focus:ring-2 focus:ring-purple-500`}
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Progress Summary */}
               {studyPlan.testDate && (

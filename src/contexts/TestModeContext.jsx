@@ -1655,6 +1655,20 @@ export const TestModeProvider = ({ children }) => {
     }));
   };
 
+  const setDailyGoal = (newGoal) => {
+    setStudyPlan(prev => ({
+      ...prev,
+      dailyGoal: Math.max(1, Math.min(newGoal, 50)), // Ensure between 1 and 50
+    }));
+  };
+
+  const setTargetQuestionsPerDay = (newTarget) => {
+    setStudyPlan(prev => ({
+      ...prev,
+      targetQuestionsPerDay: Math.max(1, Math.min(newTarget, 50)), // Ensure between 1 and 50
+    }));
+  };
+
   // Spaced Repetition Functions
   const clamp = (x, min, max) => Math.max(min, Math.min(max, x));
 
@@ -2827,6 +2841,8 @@ export const TestModeProvider = ({ children }) => {
     setTestDate,
     updateDailyProgress,
     adjustDailyGoal,
+    setDailyGoal,
+    setTargetQuestionsPerDay,
     getStudyProgress,
     getDailyProgress,
     spacedRepetition,
