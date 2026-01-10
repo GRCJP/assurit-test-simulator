@@ -1135,18 +1135,8 @@ const DailyDrills = ({ questions }) => {
       </div>
     );
   }
-
-  if (!currentQuestion) {
-    return (
-      <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gray-50'} flex items-center justify-center`}>
-        <div className={`text-center ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-          <div className="text-6xl mb-4">🔄</div>
-          <h2 className="text-2xl font-bold mb-2">Loading Questions...</h2>
-        </div>
-      </div>
-    );
-  }
-
+  
+  // Main render - handle null currentQuestion in render logic instead of early return
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gray-50'} py-4`}>
       {/* Resume Session Prompt */}
@@ -1364,14 +1354,15 @@ const DailyDrills = ({ questions }) => {
         </div>
 
         {/* Question Card */}
-        <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-sm p-6 mb-6`}>
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                darkMode ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
-              }`}>
-                {currentQuestion.domain}
-              </span>
+        {currentQuestion ? (
+          <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-sm p-6 mb-6`}>
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  darkMode ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
+                }`}>
+                  {currentQuestion.domain}
+                </span>
               {currentAnswer.isCorrect !== null && (
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                   currentAnswer.isCorrect
@@ -1467,6 +1458,17 @@ const DailyDrills = ({ questions }) => {
             </div>
           )}
         </div>
+        ) : (
+          <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-sm p-12 mb-6 text-center`}>
+            <div className="text-6xl mb-4">🔄</div>
+            <h2 className={`text-2xl font-bold mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+              Loading Questions...
+            </h2>
+            <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+              Preparing your daily practice session...
+            </p>
+          </div>
+        )}
 
         {/* Domain Performance */}
         {weakDomains.length > 0 && shouldRecommendFocusedSession && (
