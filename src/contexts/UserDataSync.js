@@ -192,7 +192,7 @@ class UserDataSync {
 
   // Validate environment configuration
   validateConfig() {
-    const requiredEnvVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_SERVICE_ROLE_KEY'];
+    const requiredEnvVars = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_SECRET_API_KEY'];
     const missingVars = requiredEnvVars.filter(varName => !import.meta.env[varName]);
     
     if (missingVars.length > 0) {

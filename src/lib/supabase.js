@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseServiceRoleKey = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+const supabaseSecretApiKey = import.meta.env.VITE_SUPABASE_SECRET_API_KEY;
 
-// Create client with optional key (try built-in auth first)
-export const supabase = supabaseServiceRoleKey 
-  ? createClient(supabaseUrl, supabaseServiceRoleKey)
+// Create client with modern Secret API Key
+export const supabase = supabaseSecretApiKey 
+  ? createClient(supabaseUrl, supabaseSecretApiKey)
   : createClient(supabaseUrl);
 
 // Helper function to get user-specific table reference
