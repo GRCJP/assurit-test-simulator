@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
+// Debug environment variables
+console.log('🔧 Environment Variables Debug:');
+console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+console.log('VITE_SUPABASE_ANON_KEY:', import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing');
+
 // Use environment variables with anonymous key for browser
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,7 +14,15 @@ console.log('URL:', supabaseUrl);
 console.log('Key type: Anonymous/Public (browser-safe)');
 console.log('Key loaded:', supabaseAnonKey ? 'Yes' : 'No');
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Fallback to hardcoded values if env vars not loaded
+const finalUrl = supabaseUrl || 'https://szyjviaolnaoywopfrqp.supabase.co';
+const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5anZpYW9sbmFveW93cGZycXAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNjQ4Njg1MSwiZXhwIjoyMDUyMDYyODUxfQ.sb_publishable_Xf-epctMBmqxCgCAjmnf7A_qF2ihuf4';
+
+console.log('🔧 Final Config:');
+console.log('URL:', finalUrl);
+console.log('Using fallback:', !supabaseUrl || !supabaseAnonKey);
+
+export const supabase = createClient(finalUrl, finalKey);
 
 // Helper function to get user-specific table reference
 export const getUserDataRef = (userId, bankId = 'bankCCP') => {
