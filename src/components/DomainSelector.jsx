@@ -117,6 +117,17 @@ const DomainSelector = ({
       ? missedForDomain
       : domainQuestions;
 
+    // Validate that we have questions to practice
+    if (!filteredQuestions || filteredQuestions.length === 0) {
+      console.warn('🎯 DomainSelector: No questions available for practice', {
+        selectedDomain,
+        filterType,
+        domainQuestionsCount: domainQuestions.length,
+        missedForDomainCount: missedForDomain.length
+      });
+      return;
+    }
+
     console.log('🎯 DomainSelector: Starting practice with:', {
       selectedDomain,
       filterType,

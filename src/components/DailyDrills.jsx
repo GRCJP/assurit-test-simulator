@@ -1186,6 +1186,12 @@ const DailyDrills = ({ questions }) => {
                   localStorage.removeItem('cmmcDrillCheckpoint');
                   setShowResumePrompt(false);
                   setInterruptedSession(null);
+                  // Reset session state to start fresh
+                  setDailyDrillAnswers([]);
+                  setDailyDrillIndex(0);
+                  setCurrentQuestionIndex(0);
+                  setShowExplanation(false);
+                  setSessionComplete(false);
                 }}
                 className={`flex-1 px-4 py-2 rounded-lg transition-colors font-medium ${
                   darkMode 
