@@ -1,17 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseSecretApiKey = import.meta.env.VITE_SUPABASE_SECRET_API_KEY;
+// Hardcode values temporarily to test connection
+const supabaseUrl = 'https://szyjviaolnaoywopfrqp.supabase.co';
+const supabaseSecretApiKey = 'sb_secret_fFB2wvCL_xTIG4Wqe-B7dw_VrVTM_f-';
 
-// Debug: Check if environment variables are loaded
-console.log('🔧 Supabase Config Debug:');
-console.log('URL:', supabaseUrl ? 'Loaded' : 'Missing');
-console.log('Key:', supabaseSecretApiKey ? 'Loaded' : 'Missing');
-
-// Create client with Secret API Key (required)
-if (!supabaseUrl || !supabaseSecretApiKey) {
-  throw new Error('Missing required Supabase environment variables');
-}
+console.log('🔧 Supabase Config - Using hardcoded values');
+console.log('URL:', supabaseUrl);
+console.log('Key length:', supabaseSecretApiKey.length);
 
 export const supabase = createClient(supabaseUrl, supabaseSecretApiKey);
 
