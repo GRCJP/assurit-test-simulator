@@ -2033,8 +2033,10 @@ export const TestModeProvider = ({ children }) => {
       const k = 12;
       const confidence = 1 - Math.exp(-newAttempts / k);
 
-      // Blend EWMA toward neutral when confidence is low
-      const blendedMastery = clamp01((ewma * confidence) + (0.5 * (1 - confidence)));
+      // Blend EWMA toward the prior mastery when confidence is low.
+      // This prevents domains with 0 attempts from appearing as ~50%.
+      const priorMastery = old.masteryLevel ?? 0;
+      const blendedMastery = clamp01((ewma * confidence) + (priorMastery * (1 - confidence)));
 
       newLevels[domain] = {
         ...old,

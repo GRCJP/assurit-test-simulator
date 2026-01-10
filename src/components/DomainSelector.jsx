@@ -16,8 +16,7 @@ const DomainSelector = ({
     domainMasteryKeys: domainMastery?.levels ? Object.keys(domainMastery.levels) : []
   });
   
-  const [selectedDomains, setSelectedDomains] = useState([]);
-  const [practiceMode, setPracticeMode] = useState('focus'); // 'focus' or 'improve'
+  const [selectedDomain, setSelectedDomain] = useState(null);
 
   // Calculate domain statistics
   const domainStats = useMemo(() => {
@@ -104,51 +103,32 @@ const DomainSelector = ({
     return result;
   }, [questions, domainMastery, missedQuestions]);
 
-  // Get weak domains (below 70% mastery AND have attempts)
-  const weakDomains = domainStats.filter(domain => domain.mastery < 70 && domain.attempts > 0 && domain.totalQuestions > 0);
-  
-  // Get strong domains (70% and above AND have attempts)
-  const strongDomains = domainStats.filter(domain => domain.mastery >= 70 && domain.attempts > 0 && domain.totalQuestions > 0);
-
   const handleDomainToggle = (domainName) => {
-    setSelectedDomains(prev => {
-      if (prev.includes(domainName)) {
-        return prev.filter(d => d !== domainName);
-      } else {
-        return [...prev, domainName];
-      }
-    });
+    setSelectedDomain(prev => (prev === domainName ? null : domainName));
   };
 
-  const handleSelectWeakDomains = () => {
-    setSelectedDomains(weakDomains.map(d => d.name));
-  };
+  const handleStartPractice = (mode) => {
+    if (!selectedDomain) return;
 
-  const handleSelectStrongDomains = () => {
-    setSelectedDomains(strongDomains.map(d => d.name));
-  };
+    const domainQuestions = (questions || []).filter(q => q.domain === selectedDomain);
+    const missedForDomain = (missedQuestions || []).filter(q => q.domain === selectedDomain);
 
-  const handleClearSelection = () => {
-    setSelectedDomains([]);
-  };
+    const filteredQuestions = mode === 'missed'
+      ? [
+          ...missedForDomain,
+          ...domainQuestions.filter(q => !missedForDomain.some(mq => mq.id === q.id)),
+        ]
+      : domainQuestions;
 
-  const handleStartPractice = () => {
-    if (selectedDomains.length === 0) return;
-    
-    // Filter questions by selected domains
-    const filteredQuestions = questions.filter(q => 
-      selectedDomains.includes(q.domain)
-    );
-    
     console.log('🎯 DomainSelector: Starting practice with:', {
-      selectedDomains,
+      selectedDomain,
+      mode,
       filteredQuestionsCount: filteredQuestions.length,
+      missedCount: missedForDomain.length,
       filteredQuestions: filteredQuestions.slice(0, 3)
     });
-    
-    // Call the callback with filtered questions - this will set mode to domainPractice
-    onDomainSelect(selectedDomains, filteredQuestions);
-    // Don't call onStartPractice() here - it causes duplicate setMode calls
+
+    onDomainSelect([selectedDomain], filteredQuestions);
   };
 
   const getMasteryColor = (mastery) => {
@@ -169,10 +149,9 @@ const DomainSelector = ({
     return 'bg-red-500';
   };
 
-  const totalSelectedQuestions = selectedDomains.reduce((sum, domainName) => {
-    const domain = domainStats.find(d => d.name === domainName);
-    return sum + (domain?.totalQuestions || 0);
-  }, 0);
+  const selectedDomainStats = selectedDomain
+    ? domainStats.find(d => d.name === selectedDomain)
+    : null;
 
   return (
     <div className={`${darkMode ? 'bg-slate-800' : 'bg-white'} rounded-xl shadow-lg p-6`}>
@@ -204,80 +183,10 @@ const DomainSelector = ({
       {/* Domain List - Only show if domains exist */}
       {domainStats.length > 0 && (
         <>
-          {/* Practice Mode Selection */}
-          <div className="mb-6">
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setPracticeMode('focus')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  practiceMode === 'focus'
-                    ? darkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'
-                    : darkMode ? 'bg-slate-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                <Target className="w-4 h-4 inline mr-2" />
-                Focus Practice
-              </button>
-              <button
-                onClick={() => setPracticeMode('improve')}
-                className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                  practiceMode === 'improve'
-                    ? darkMode ? 'bg-orange-600 text-white' : 'bg-orange-500 text-white'
-                    : darkMode ? 'bg-slate-700 text-gray-300' : 'bg-gray-100 text-gray-700'
-                }`}
-              >
-                <TrendingUp className="w-4 h-4 inline mr-2" />
-                Improve Weak Areas
-              </button>
-            </div>
-          </div>
-
-          {/* Quick Selection Buttons */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            <button
-              onClick={handleSelectWeakDomains}
-              disabled={weakDomains.length === 0}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                weakDomains.length === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : darkMode ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'
-              }`}
-            >
-              <AlertTriangle className="w-3 h-3 inline mr-1" />
-              Select Weak Domains ({weakDomains.length})
-            </button>
-            
-            <button
-              onClick={handleSelectStrongDomains}
-              disabled={strongDomains.length === 0}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                strongDomains.length === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : darkMode ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'
-              }`}
-            >
-              <CheckCircle className="w-3 h-3 inline mr-1" />
-              Select Strong Domains ({strongDomains.length})
-            </button>
-            
-            <button
-              onClick={handleClearSelection}
-              disabled={selectedDomains.length === 0}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                selectedDomains.length === 0
-                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                  : darkMode ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-500 text-white hover:bg-gray-600'
-              }`}
-            >
-              Clear Selection
-            </button>
-          </div>
-
           {/* Domain List */}
           <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
         {domainStats.map((domain) => {
-          const isSelected = selectedDomains.includes(domain.name);
-          const isWeak = domain.mastery < 70;
+          const isSelected = selectedDomain === domain.name;
           
           return (
             <div
@@ -344,32 +253,46 @@ const DomainSelector = ({
       {/* Action Buttons */}
       <div className="flex items-center justify-between">
         <div className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          {selectedDomains.length > 0 ? (
+          {selectedDomain ? (
             <span>
-              {selectedDomains.length} domain{selectedDomains.length !== 1 ? 's' : ''} selected
-              <span className="ml-2">• {totalSelectedQuestions} questions</span>
+              Domain selected: {selectedDomain}
+              {selectedDomainStats ? (
+                <span className="ml-2">• {selectedDomainStats.totalQuestions} questions • {selectedDomainStats.missedCount || 0} missed</span>
+              ) : null}
             </span>
           ) : (
-            <span>Select domains to start practice</span>
+            <span>Select a domain to start practice</span>
           )}
         </div>
-        
-        <button
-          onClick={handleStartPractice}
-          disabled={selectedDomains.length === 0}
-          className={`px-6 py-2 rounded-lg font-medium transition-all flex items-center ${
-            selectedDomains.length === 0
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'
-          }`}
-        >
-          <BookOpen className="w-4 h-4 mr-2" />
-          Start Practice
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleStartPractice('missed')}
+            disabled={!selectedDomain}
+            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center ${
+              !selectedDomain
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : darkMode ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-500 text-white hover:bg-red-600'
+            }`}
+          >
+            Practice Missed
+          </button>
+          <button
+            onClick={() => handleStartPractice('all')}
+            disabled={!selectedDomain}
+            className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center ${
+              !selectedDomain
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'
+            }`}
+          >
+            Practice All
+          </button>
+        </div>
       </div>
 
       {/* Study Plan Integration Info */}
-      {selectedDomains.length > 0 && (
+      {selectedDomain && (
         <div className={`mt-4 p-3 rounded-lg ${darkMode ? 'bg-blue-900/20 border border-blue-500/30' : 'bg-blue-50 border border-blue-200'}`}>
           <div className={`text-sm ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}>
             💡 <span className="font-medium">Study Plan Integration:</span> 
