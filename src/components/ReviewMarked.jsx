@@ -59,36 +59,83 @@ const ReviewMarked = ({ questions, onClose }) => {
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} p-4`}>
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className={`rounded-lg p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
-          <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold">Review Marked Questions</h1>
-            <div className="flex items-center gap-4">
-              <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
-                {currentQuestion + 1} / {markedQuestionsList.length}
-              </span>
-              <button
-                onClick={() => {
-                  // Clear all marked questions
-                  markedQuestions.forEach(id => markQuestion(id));
-                  // Then go back to practice
-                  if (onClose) {
-                    onClose();
-                  } else {
-                    window.location.reload();
-                  }
-                }}
-                className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
-              >
-                Clear All
-              </button>
+      <div className="max-w-7xl mx-auto">
+        <div className="flex gap-6">
+          {/* Side Panel - Question Navigation */}
+          <div className="w-80 flex-shrink-0">
+            <div className={`rounded-lg p-4 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'} sticky top-4`}>
+              <h3 className={`text-lg font-semibold mb-4 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Question Navigation
+              </h3>
+              <div className="grid grid-cols-4 gap-2">
+                {markedQuestionsList.map((question, index) => (
+                  <button
+                    key={question.id}
+                    onClick={() => handleJump(index)}
+                    className={`aspect-square rounded-lg border-2 text-xs font-medium transition-all hover:scale-105 ${
+                      index === currentQuestion
+                        ? darkMode 
+                          ? 'bg-blue-600 border-blue-500 text-white shadow-lg' 
+                          : 'bg-blue-500 border-blue-400 text-white shadow-lg'
+                        : darkMode
+                          ? 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title={`Question ${index + 1}: ${question.domain || 'General'}`}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
+              
+              <div className={`mt-4 p-3 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                <div className={`text-sm font-medium mb-2 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Progress
+                </div>
+                <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  {currentQuestion + 1} of {markedQuestionsList.length}
+                </div>
+                <div className="w-full bg-gray-300 rounded-full h-2 mt-2">
+                  <div 
+                    className="bg-blue-500 h-2 rounded-full transition-all"
+                    style={{ width: `${((currentQuestion + 1) / markedQuestionsList.length) * 100}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
-            Review questions you marked during the simulated test.
-          </p>
-        </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Header */}
+            <div className={`rounded-lg p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
+              <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">Review Marked Questions</h1>
+                <div className="flex items-center gap-4">
+                  <span className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+                    {currentQuestion + 1} / {markedQuestionsList.length}
+                  </span>
+                  <button
+                    onClick={() => {
+                      // Clear all marked questions
+                      markedQuestions.forEach(id => markQuestion(id));
+                      // Then go back to practice
+                      if (onClose) {
+                        onClose();
+                      } else {
+                        window.location.reload();
+                      }
+                    }}
+                    className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                  >
+                    Clear All
+                  </button>
+                </div>
+              </div>
+              <p className={darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                Review questions you marked during the simulated test.
+              </p>
+            </div>
 
         {/* Question Card */}
         <div className={`rounded-lg p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
@@ -211,24 +258,6 @@ const ReviewMarked = ({ questions, onClose }) => {
             Next
           </button>
         </div>
-
-        {/* Quick Jump Grid */}
-        <div className={`rounded-lg p-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
-          <h3 className="font-semibold mb-4">Quick Jump</h3>
-          <div className="grid grid-cols-10 gap-2">
-            {markedQuestionsList.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => handleJump(index)}
-                className={`p-2 rounded text-sm transition-colors ${
-                  index === currentQuestion
-                    ? 'bg-blue-600 text-white'
-                    : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                {index + 1}
-              </button>
-            ))}
           </div>
         </div>
       </div>
