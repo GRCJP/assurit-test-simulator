@@ -19,10 +19,6 @@ export async function getUserData(userId, bankId, dataType) {
 
   if (error && error.code !== 'PGRST116') {
     console.error('getUserData error:', error);
-    // If RLS blocks us, try without RLS for debugging
-    if (error.code === 'PGRST301') {
-      console.warn('RLS policy blocked access - check user_id and policies');
-    }
     throw error;
   }
   return data?.data ?? null;
@@ -49,10 +45,6 @@ export async function updateUserData(userId, bankId, dataType, payload) {
 
   if (error) {
     console.error('updateUserData error:', error);
-    // If RLS blocks us, try without RLS for debugging
-    if (error.code === 'PGRST301') {
-      console.warn('RLS policy blocked access - check user_id and policies');
-    }
     throw error;
   }
 }
