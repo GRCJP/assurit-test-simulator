@@ -246,7 +246,7 @@ const ReviewMissed = () => {
               You haven't missed any questions yet. Keep practicing!
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => setMode('dailyDrills')}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Back to Daily Drills
@@ -310,7 +310,7 @@ const ReviewMissed = () => {
                 Review More Questions
               </button>
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => setMode('dashboard')}
                 className={`px-6 py-3 rounded-lg font-semibold ${
                   darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
                 }`}
