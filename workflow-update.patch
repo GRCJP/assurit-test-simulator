@@ -1,0 +1,29 @@
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml
+index 26690ef..9f79b10 100644
+--- a/.github/workflows/deploy.yml
++++ b/.github/workflows/deploy.yml
+@@ -8,6 +8,10 @@ on:
+ 
+ jobs:
+   build:
++    permissions:
++      contents: read
++      pages: write
++      id-token: write
+     runs-on: ubuntu-latest
+ 
+     steps:
+@@ -24,6 +28,13 @@ jobs:
+       run: npm ci
+ 
+     - name: Build
++      env:
++        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
++        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
++        VITE_AUTH0_DOMAIN: ${{ secrets.VITE_AUTH0_DOMAIN }}
++        VITE_AUTH0_CLIENT_ID: ${{ secrets.VITE_AUTH0_CLIENT_ID }}
++        VITE_AUTH0_AUDIENCE: ${{ secrets.VITE_AUTH0_AUDIENCE }}
++        VITE_AUTH0_REDIRECT_URI: ${{ secrets.VITE_AUTH0_REDIRECT_URI }}
+       run: npm run build
+ 
+     - name: Setup Pages

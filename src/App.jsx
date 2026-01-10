@@ -436,7 +436,7 @@ function AppContent({ userEmail, onLogout }) {
     getMonthlyProgress,
     adaptiveDifficulty,
     spacedRepetition,
-    supabaseUser
+    supabaseUserId
   } = useTestMode();
   const questions = Array.isArray(
     questionBankId === 'bankCCA' ? questionsCCA : 
@@ -448,10 +448,10 @@ function AppContent({ userEmail, onLogout }) {
   
   // Log the user ID after successful login
   useEffect(() => {
-    if (supabaseUser?.id) {
-      console.log('Supabase user UUID (used for database):', supabaseUser.id);
+    if (supabaseUserId) {
+      console.log('Auth0 user ID (used for database):', supabaseUserId);
     }
-  }, [supabaseUser]);
+  }, [supabaseUserId]);
   
   console.log('AppContent - questionBankId:', questionBankId);
   console.log('AppContent - questions length:', questions.length);

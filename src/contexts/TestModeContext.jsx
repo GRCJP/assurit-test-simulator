@@ -5,6 +5,10 @@ import questionsCCA from '../../data/questions_cca.json';
 import { supabase } from '../lib/supabase.js';
 import { getUserData, updateUserData } from '../lib/userProgress.js';
 
+// Debug: Check Supabase client configuration
+console.log('Supabase URL:', supabase.supabaseUrl);
+console.log('Supabase has auth:', !!supabase.auth);
+
 const TestModeContext = createContext();
 
 export const useTestMode = () => {
@@ -16,88 +20,24 @@ export const useTestMode = () => {
 };
 
 const useSupabaseUidFromAuth0 = () => {
-  const { isAuthenticated, getIdTokenClaims, loginWithRedirect } = useAuth0();
-  const [supabaseUser, setSupabaseUser] = useState(null);
+  const { isAuthenticated, user, getIdTokenClaims, loginWithRedirect } = useAuth0();
+  const [supabaseUserId, setSupabaseUserId] = useState(null);
   const [isSupabaseSessionReady, setIsSupabaseSessionReady] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
+    if (isAuthenticated && user?.sub) {
+      // Use Auth0 user.sub as the user identifier
+      // We'll update the RLS policies to work with this
+      setSupabaseUserId(user.sub);
+      setIsSupabaseSessionReady(true);
+      console.log('Using Auth0 user ID as identifier:', user.sub);
+    } else {
+      setSupabaseUserId(null);
+      setIsSupabaseSessionReady(false);
+    }
+  }, [isAuthenticated, user]);
 
-    const syncSession = async () => {
-      if (!isAuthenticated) {
-        if (mounted) {
-          setSupabaseUser(null);
-          setIsSupabaseSessionReady(false);
-        }
-        return;
-      }
-
-      try {
-        // Get Auth0 ID token
-        const claims = await getIdTokenClaims();
-        const idToken = claims?.__raw;
-        if (!idToken) {
-          throw new Error('Missing Auth0 id_token');
-        }
-
-        // Exchange Auth0 id_token for Supabase session
-        const { data, error } = await supabase.auth.signInWithIdToken({
-          provider: 'auth0',
-          token: idToken,
-        });
-        
-        if (error) {
-          console.error('Supabase signInWithIdToken failed:', error);
-          // IMPORTANT: Do NOT fall back to Auth0 user.sub
-          console.warn('Supabase session not established, cloud sync disabled');
-          if (mounted) {
-            setSupabaseUser(null);
-            setIsSupabaseSessionReady(false);
-          }
-          return;
-        }
-
-        // Get the Supabase user
-        const { data: userData } = await supabase.auth.getUser();
-        if (mounted && userData?.user) {
-          setSupabaseUser(userData.user);
-          setIsSupabaseSessionReady(true);
-          console.log('Supabase session established with UUID:', userData.user.id);
-        }
-      } catch (e) {
-        console.error('Error establishing Supabase session:', e);
-        // IMPORTANT: Do NOT fall back to Auth0 user.sub
-        console.warn('Supabase session not established, cloud sync disabled');
-        if (mounted) {
-          setSupabaseUser(null);
-          setIsSupabaseSessionReady(false);
-        }
-      }
-    };
-
-    syncSession();
-
-    // Listen for auth state changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        if (session?.user) {
-          setSupabaseUser(session.user);
-          setIsSupabaseSessionReady(true);
-        } else {
-          setSupabaseUser(null);
-          setIsSupabaseSessionReady(false);
-          console.warn('Supabase session not established, cloud sync disabled');
-        }
-      }
-    });
-
-    return () => {
-      mounted = false;
-      sub?.subscription?.unsubscribe?.();
-    };
-  }, [isAuthenticated, getIdTokenClaims]);
-
-  return { isAuthenticated, loginWithRedirect, supabaseUser, isSupabaseSessionReady };
+  return { isAuthenticated, loginWithRedirect, supabaseUserId, isSupabaseSessionReady };
 };
 
 const keyForBank = (bankId, key) => `cmmc_${bankId}_${key}`;
@@ -248,9 +188,9 @@ const getSystemDarkModePreference = () => {
 };
 
 export const TestModeProvider = ({ children }) => {
-  const { isAuthenticated, loginWithRedirect, supabaseUser, isSupabaseSessionReady } = useSupabaseUidFromAuth0();
-  const userId = supabaseUser?.id; // Extract UUID from supabaseUser
-  const canSyncToCloud = Boolean(supabaseUser?.id); // Only sync if we have a valid Supabase session
+  const { isAuthenticated, loginWithRedirect, supabaseUserId, isSupabaseSessionReady } = useSupabaseUidFromAuth0();
+  const userId = supabaseUserId; // Auth0 user.sub value
+  const canSyncToCloud = Boolean(supabaseUserId); // Only sync if we have a user ID
   
   // Feature flags system for safe development
   const [featureFlags, setFeatureFlags] = useState(() => {
