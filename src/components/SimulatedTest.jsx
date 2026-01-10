@@ -445,6 +445,7 @@ const SimulatedTest = ({ questions }) => {
             {/* Action Buttons */}
             <div className="flex gap-4 justify-center">
               <button
+                type="button"
                 onClick={handleReviewMarked}
                 className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                   markedQuestionsList.length > 0
@@ -875,6 +876,7 @@ const SimulatedTest = ({ questions }) => {
                 </button>
               )}
               <button
+                type="button"
                 onClick={handleReviewMarked}
                 className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors border-2 ${
                   darkMode
