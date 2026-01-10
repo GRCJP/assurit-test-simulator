@@ -107,28 +107,26 @@ const DomainSelector = ({
     setSelectedDomain(prev => (prev === domainName ? null : domainName));
   };
 
-  const handleStartPractice = (mode) => {
+  const handleStartPractice = (filterType) => {
     if (!selectedDomain) return;
 
     const domainQuestions = (questions || []).filter(q => q.domain === selectedDomain);
     const missedForDomain = (missedQuestions || []).filter(q => q.domain === selectedDomain);
 
-    const filteredQuestions = mode === 'missed'
-      ? [
-          ...missedForDomain,
-          ...domainQuestions.filter(q => !missedForDomain.some(mq => mq.id === q.id)),
-        ]
+    const filteredQuestions = filterType === 'missed'
+      ? missedForDomain
       : domainQuestions;
 
     console.log('🎯 DomainSelector: Starting practice with:', {
       selectedDomain,
-      mode,
+      filterType,
       filteredQuestionsCount: filteredQuestions.length,
       missedCount: missedForDomain.length,
       filteredQuestions: filteredQuestions.slice(0, 3)
     });
 
-    onDomainSelect([selectedDomain], filteredQuestions);
+    // Pass the filter type to the parent
+    onDomainSelect([selectedDomain], filteredQuestions, filterType);
   };
 
   const getMasteryColor = (mastery) => {

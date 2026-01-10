@@ -2703,16 +2703,19 @@ export const TestModeProvider = ({ children }) => {
   // Domain-specific practice functions
   const [selectedDomains, setSelectedDomains] = useState([]);
   const [domainFilteredQuestions, setDomainFilteredQuestions] = useState([]);
+  const [domainFilterType, setDomainFilterType] = useState('all');
 
-  const startDomainPractice = (domains, filteredQuestions) => {
-    console.log('🎯 Starting domain-specific practice:', { domains, questionCount: filteredQuestions.length });
+  const startDomainPractice = (domains, filteredQuestions, filterType = 'all') => {
+    console.log('🎯 Starting domain-specific practice:', { domains, filterType, questionCount: filteredQuestions.length });
     
     setSelectedDomains(domains);
     setDomainFilteredQuestions(filteredQuestions);
+    setDomainFilterType(filterType);
     
-    // Save domain selection to localStorage for persistence
+    // Save domain practice state to localStorage for persistence
     localStorage.setItem('cmmc_selected_domains', JSON.stringify(domains));
     localStorage.setItem('cmmc_domain_filtered_questions', JSON.stringify(filteredQuestions.map(q => q.id)));
+    localStorage.setItem('cmmc_domain_filter_type', filterType);
     
     // Set mode to practice with domain filtering
     setMode('domainPractice');
@@ -2721,23 +2724,28 @@ export const TestModeProvider = ({ children }) => {
   const clearDomainPractice = () => {
     setSelectedDomains([]);
     setDomainFilteredQuestions([]);
+    setDomainFilterType('all');
     localStorage.removeItem('cmmc_selected_domains');
     localStorage.removeItem('cmmc_domain_filtered_questions');
+    localStorage.removeItem('cmmc_domain_filter_type');
   };
 
   // Load domain practice state on mount
   useEffect(() => {
     const savedDomains = localStorage.getItem('cmmc_selected_domains');
     const savedQuestions = localStorage.getItem('cmmc_domain_filtered_questions');
+    const savedFilterType = localStorage.getItem('cmmc_domain_filter_type');
     
     if (savedDomains && savedQuestions) {
       try {
         const domains = JSON.parse(savedDomains);
         const questionIds = JSON.parse(savedQuestions);
+        const filterType = savedFilterType || 'all';
         const filteredQuestions = questions?.filter(q => questionIds.includes(q.id)) || [];
         
         setSelectedDomains(domains);
         setDomainFilteredQuestions(filteredQuestions);
+        setDomainFilterType(filterType);
       } catch (error) {
         console.error('Error loading domain practice state:', error);
         clearDomainPractice();
@@ -2861,6 +2869,7 @@ export const TestModeProvider = ({ children }) => {
     // Domain-specific practice functions
     selectedDomains,
     domainFilteredQuestions,
+    domainFilterType,
     startDomainPractice,
     clearDomainPractice,
     addToMissedByDomain,

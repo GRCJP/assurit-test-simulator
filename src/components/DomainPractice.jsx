@@ -8,6 +8,7 @@ const DomainPractice = () => {
     mode,
     setMode,
     domainFilteredQuestions,
+    domainFilterType,
     selectedDomains,
     clearDomainPractice,
     recordAttempt,
@@ -80,7 +81,8 @@ const DomainPractice = () => {
   };
 
   const handleBackToDashboard = () => {
-    clearDomainPractice();
+    // Don't clear domain practice state - just navigate back to dashboard
+    // This allows users to return to domain selection
     setMode('dashboard');
   };
 
@@ -106,7 +108,7 @@ const DomainPractice = () => {
               darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
           >
-            Back to Dashboard
+            Back to Domain Selection
           </button>
         </div>
       </div>
@@ -175,7 +177,7 @@ const DomainPractice = () => {
                   darkMode ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-500 text-white hover:bg-gray-600'
                 }`}
               >
-                Back to Dashboard
+                Back to Domain Selection
               </button>
             </div>
           </div>
@@ -197,7 +199,7 @@ const DomainPractice = () => {
               }`}
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              Back to Domain Selection
             </button>
             
             <div className={`px-4 py-2 rounded-lg ${darkMode ? 'bg-slate-700' : 'bg-gray-200'}`}>
@@ -220,6 +222,15 @@ const DomainPractice = () => {
                 {domain}
               </span>
             ))}
+          </div>
+
+          {/* Filter Type */}
+          <div className={`px-3 py-2 rounded-lg text-sm font-medium ${
+            domainFilterType === 'missed' 
+              ? darkMode ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'bg-red-100 text-red-700 border border-red-200'
+              : darkMode ? 'bg-green-600/20 text-green-400 border border-green-500/30' : 'bg-green-100 text-green-700 border border-green-200'
+          }`}>
+            {domainFilterType === 'missed' ? '🔴 Practicing Missed Questions' : '🟢 Practicing All Questions'}
           </div>
         </div>
 
