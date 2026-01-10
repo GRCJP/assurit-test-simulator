@@ -1,7 +1,7 @@
 import { supabase } from './supabase.js';
 
 export async function getUserData(userId, bankId, dataType) {
-  // userId is the Auth0 user.sub value (e.g., "auth0|xxx")
+  // userId is the Supabase UUID from supabase.auth.getUser().id
   if (!userId) {
     console.warn('getUserData called without userId');
     return null;
@@ -19,13 +19,17 @@ export async function getUserData(userId, bankId, dataType) {
 
   if (error && error.code !== 'PGRST116') {
     console.error('getUserData error:', error);
+    // If RLS blocks us, try without RLS for debugging
+    if (error.code === 'PGRST301') {
+      console.warn('RLS policy blocked access - check user_id and policies');
+    }
     throw error;
   }
   return data?.data ?? null;
 }
 
 export async function updateUserData(userId, bankId, dataType, payload) {
-  // userId is the Auth0 user.sub value (e.g., "auth0|xxx")
+  // userId is the Supabase UUID from supabase.auth.getUser().id
   if (!userId) {
     console.warn('updateUserData called without userId');
     return;
@@ -45,6 +49,10 @@ export async function updateUserData(userId, bankId, dataType, payload) {
 
   if (error) {
     console.error('updateUserData error:', error);
+    // If RLS blocks us, try without RLS for debugging
+    if (error.code === 'PGRST301') {
+      console.warn('RLS policy blocked access - check user_id and policies');
+    }
     throw error;
   }
 }

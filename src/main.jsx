@@ -29,10 +29,16 @@ try {
   const domain = import.meta.env.VITE_AUTH0_DOMAIN;
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
-  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || 
-    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:4173/assurit-test-simulator'
-      : `${window.location.origin}/assurit-test-simulator`);
+  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || `${window.location.origin}/assurit-test-simulator`;
+
+  // Verify environment variables in production
+  if (import.meta.env.PROD) {
+    console.log('=== Production Environment Check ===');
+    console.log('VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+    console.log('VITE_SUPABASE_ANON_KEY present:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+    console.log('VITE_AUTH0_DOMAIN:', import.meta.env.VITE_AUTH0_DOMAIN);
+    console.log('=== End Environment Check ===');
+  }
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>

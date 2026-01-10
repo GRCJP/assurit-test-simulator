@@ -16,24 +16,88 @@ export const useTestMode = () => {
 };
 
 const useSupabaseUidFromAuth0 = () => {
-  const { isAuthenticated, user, getIdTokenClaims, loginWithRedirect } = useAuth0();
-  const [supabaseUserId, setSupabaseUserId] = useState(null);
+  const { isAuthenticated, getIdTokenClaims, loginWithRedirect } = useAuth0();
+  const [supabaseUser, setSupabaseUser] = useState(null);
   const [isSupabaseSessionReady, setIsSupabaseSessionReady] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && user?.sub) {
-      // Use Auth0 user.sub as the user identifier
-      // We'll update the RLS policies to work with this
-      setSupabaseUserId(user.sub);
-      setIsSupabaseSessionReady(true);
-      console.log('Using Auth0 user ID as identifier:', user.sub);
-    } else {
-      setSupabaseUserId(null);
-      setIsSupabaseSessionReady(false);
-    }
-  }, [isAuthenticated, user]);
+    let mounted = true;
 
-  return { isAuthenticated, loginWithRedirect, supabaseUserId, isSupabaseSessionReady };
+    const syncSession = async () => {
+      if (!isAuthenticated) {
+        if (mounted) {
+          setSupabaseUser(null);
+          setIsSupabaseSessionReady(false);
+        }
+        return;
+      }
+
+      try {
+        // Get Auth0 ID token
+        const claims = await getIdTokenClaims();
+        const idToken = claims?.__raw;
+        if (!idToken) {
+          throw new Error('Missing Auth0 id_token');
+        }
+
+        // Exchange Auth0 id_token for Supabase session
+        const { data, error } = await supabase.auth.signInWithIdToken({
+          provider: 'auth0',
+          token: idToken,
+        });
+        
+        if (error) {
+          console.error('Supabase signInWithIdToken failed:', error);
+          // IMPORTANT: Do NOT fall back to Auth0 user.sub
+          console.warn('Supabase session not established, cloud sync disabled');
+          if (mounted) {
+            setSupabaseUser(null);
+            setIsSupabaseSessionReady(false);
+          }
+          return;
+        }
+
+        // Get the Supabase user
+        const { data: userData } = await supabase.auth.getUser();
+        if (mounted && userData?.user) {
+          setSupabaseUser(userData.user);
+          setIsSupabaseSessionReady(true);
+          console.log('Supabase session established with UUID:', userData.user.id);
+        }
+      } catch (e) {
+        console.error('Error establishing Supabase session:', e);
+        // IMPORTANT: Do NOT fall back to Auth0 user.sub
+        console.warn('Supabase session not established, cloud sync disabled');
+        if (mounted) {
+          setSupabaseUser(null);
+          setIsSupabaseSessionReady(false);
+        }
+      }
+    };
+
+    syncSession();
+
+    // Listen for auth state changes
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (mounted) {
+        if (session?.user) {
+          setSupabaseUser(session.user);
+          setIsSupabaseSessionReady(true);
+        } else {
+          setSupabaseUser(null);
+          setIsSupabaseSessionReady(false);
+          console.warn('Supabase session not established, cloud sync disabled');
+        }
+      }
+    });
+
+    return () => {
+      mounted = false;
+      sub?.subscription?.unsubscribe?.();
+    };
+  }, [isAuthenticated, getIdTokenClaims]);
+
+  return { isAuthenticated, loginWithRedirect, supabaseUser, isSupabaseSessionReady };
 };
 
 const keyForBank = (bankId, key) => `cmmc_${bankId}_${key}`;
@@ -184,8 +248,9 @@ const getSystemDarkModePreference = () => {
 };
 
 export const TestModeProvider = ({ children }) => {
-  const { isAuthenticated, loginWithRedirect, supabaseUserId, isSupabaseSessionReady } = useSupabaseUidFromAuth0();
-  const userId = supabaseUserId;
+  const { isAuthenticated, loginWithRedirect, supabaseUser, isSupabaseSessionReady } = useSupabaseUidFromAuth0();
+  const userId = supabaseUser?.id; // Extract UUID from supabaseUser
+  const canSyncToCloud = Boolean(supabaseUser?.id); // Only sync if we have a valid Supabase session
   
   // Feature flags system for safe development
   const [featureFlags, setFeatureFlags] = useState(() => {
@@ -659,9 +724,9 @@ export const TestModeProvider = ({ children }) => {
   }, [startAutoBackup, stopAutoBackup]);
   const syncDataFromCloud = useCallback(async () => {
     // Hard guard: don't attempt sync without Supabase session
-    if (!isAuthenticated || !isSupabaseSessionReady || !supabaseUserId) {
-      if (isAuthenticated && !isSupabaseSessionReady) {
-        console.warn('Cloud sync skipped: Supabase session not ready');
+    if (!isAuthenticated || !canSyncToCloud || !userId) {
+      if (isAuthenticated && !canSyncToCloud) {
+        console.warn('Cloud sync skipped: Supabase session not established');
       }
       return;
     }
@@ -801,15 +866,15 @@ export const TestModeProvider = ({ children }) => {
     } finally {
       setIsSyncing(false);
     }
-  }, [isAuthenticated, isSupabaseSessionReady, supabaseUserId, questionBankId, hasHydratedMissed]);
+  }, [isAuthenticated, canSyncToCloud, userId, questionBankId, hasHydratedMissed]);
 
   const pendingWritesRef = useRef({});
 
   const syncDataToCloud = useCallback(async (dataType, data) => {
     // Hard guard: don't attempt sync without Supabase session
-    if (!isAuthenticated || !isSupabaseSessionReady || !supabaseUserId) {
-      if (isAuthenticated && !isSupabaseSessionReady) {
-        console.warn('Cloud sync skipped: Supabase session not ready');
+    if (!isAuthenticated || !canSyncToCloud || !userId) {
+      if (isAuthenticated && !canSyncToCloud) {
+        console.warn('Cloud sync skipped: Supabase session not established');
       }
       return;
     }
@@ -821,12 +886,12 @@ export const TestModeProvider = ({ children }) => {
 
     pendingWritesRef.current[dataType] = setTimeout(async () => {
       try {
-        await updateUserData(supabaseUserId, questionBankId, dataType, data);
+        await updateUserData(userId, questionBankId, dataType, data);
       } catch (_e) {
         // no retry storm
       }
     }, 750);
-  }, [isAuthenticated, isSupabaseSessionReady, supabaseUserId, questionBankId]);
+  }, [isAuthenticated, canSyncToCloud, userId, questionBankId]);
 
   // Debug function to test sync
   const debugSync = useCallback(async () => {
