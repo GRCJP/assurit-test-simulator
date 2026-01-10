@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Hardcode values temporarily to test connection
+// Use anonymous/public key for browser (not secret key)
 const supabaseUrl = 'https://szyjviaolnaoywopfrqp.supabase.co';
-const supabaseSecretApiKey = 'sb_secret_fFB2wvCL_xTIG4Wqe-B7dw_VrVTM_f-';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5anZpYW9sbmFveW93cGZycXAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNjQ4Njg1MSwiZXhwIjoyMDUyMDYyODUxfQ.sb_publishable_Xf-epctMBmqxCgCAjmnf7A_qF2ihuf4';
 
-console.log('🔧 Supabase Config - Using hardcoded values');
+console.log('🔧 Supabase Config - Using anonymous key for browser');
 console.log('URL:', supabaseUrl);
-console.log('Key length:', supabaseSecretApiKey.length);
+console.log('Key type: Anonymous/Public (browser-safe)');
 
-export const supabase = createClient(supabaseUrl, supabaseSecretApiKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Helper function to get user-specific table reference
 export const getUserDataRef = (userId, bankId = 'bankCCP') => {
