@@ -677,6 +677,9 @@ export const TestModeProvider = ({ children }) => {
         testHistoryRemote,
         spacedRepetitionRemote,
         adaptiveDifficultyRemote,
+        dailyDrillAnswersRemote,
+        dailyDrillOrderRemote,
+        dailyDrillIndexRemote,
       ] = await Promise.all([
         getUserData(supabaseUserId, questionBankId, 'progressStreaks'),
         getUserData(supabaseUserId, questionBankId, 'scoreStats'),
@@ -689,6 +692,9 @@ export const TestModeProvider = ({ children }) => {
         getUserData(supabaseUserId, questionBankId, 'testHistory'),
         getUserData(supabaseUserId, questionBankId, 'spacedRepetition'),
         getUserData(supabaseUserId, questionBankId, 'adaptiveDifficulty'),
+        getUserData(supabaseUserId, questionBankId, 'dailyDrillAnswers'),
+        getUserData(supabaseUserId, questionBankId, 'dailyDrillOrder'),
+        getUserData(supabaseUserId, questionBankId, 'dailyDrillIndex'),
       ]);
 
       // Helper to check if data is valid (not a fallback response object)
@@ -784,6 +790,21 @@ export const TestModeProvider = ({ children }) => {
 
       if (isValidData(adaptiveDifficultyRemote)) {
         setAdaptiveDifficulty(normalizeRestoredData(adaptiveDifficultyRemote, 'adaptiveDifficulty'));
+        dataUpdated = true;
+      }
+
+      if (isValidData(dailyDrillAnswersRemote)) {
+        setDailyDrillAnswers(normalizeRestoredData(dailyDrillAnswersRemote, 'dailyDrillAnswers'));
+        dataUpdated = true;
+      }
+
+      if (isValidData(dailyDrillOrderRemote)) {
+        setDailyDrillOrder(normalizeRestoredData(dailyDrillOrderRemote, 'dailyDrillOrder'));
+        dataUpdated = true;
+      }
+
+      if (isValidData(dailyDrillIndexRemote)) {
+        setDailyDrillIndex(Number.isFinite(dailyDrillIndexRemote) ? dailyDrillIndexRemote : 0);
         dataUpdated = true;
       }
       
@@ -1355,15 +1376,21 @@ export const TestModeProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'dailyDrillIndex'), dailyDrillIndex.toString());
-  }, [dailyDrillIndex, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('dailyDrillIndex', dailyDrillIndex);
+  }, [dailyDrillIndex, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'dailyDrillOrder'), JSON.stringify(dailyDrillOrder));
-  }, [dailyDrillOrder, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('dailyDrillOrder', dailyDrillOrder);
+  }, [dailyDrillOrder, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'dailyDrillAnswers'), JSON.stringify(dailyDrillAnswers));
-  }, [dailyDrillAnswers, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('dailyDrillAnswers', dailyDrillAnswers);
+  }, [dailyDrillAnswers, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'schemaVersion'), schemaVersion.toString());
