@@ -222,7 +222,8 @@ const DailyDrills = ({ questions }) => {
       const stats = getQuestionStats ? getQuestionStats(q.id) : null;
       const attempts = stats?.attempts || 0;
       const isSeen = attempts > 0;
-      const isMissed = isSeen && stats && (stats.correct / stats.attempts) < 1;
+      const correct = stats?.correct || 0;
+      const isMissed = isSeen && attempts > 0 && (correct / attempts) < 1;
       const lastWrongAt = stats?.lastWrongAt || 0;
       
       return { ...q, isSeen, isMissed, lastWrongAt, attempts };
@@ -483,7 +484,8 @@ const DailyDrills = ({ questions }) => {
         const stats = getQuestionStats ? getQuestionStats(q.id) : null;
         const attempts = stats?.attempts || 0;
         const isSeen = attempts > 0;
-        const isMissed = isSeen && stats && (stats.correct / stats.attempts) < 1;
+        const correct = stats?.correct || 0;
+        const isMissed = isSeen && attempts > 0 && (correct / attempts) < 1;
         const lastWrongAt = stats?.lastWrongAt || 0;
         return { ...q, isSeen, isMissed, lastWrongAt, attempts };
       });
