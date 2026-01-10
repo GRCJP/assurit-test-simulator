@@ -38,7 +38,6 @@ try {
         clientId={clientId}
         authorizationParams={{
           redirect_uri: redirectUri,
-          audience,
           scope: 'openid profile email',
         }}
       >

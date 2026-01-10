@@ -35,12 +35,23 @@ const useSupabaseUidFromAuth0 = () => {
           throw new Error('Missing Auth0 id_token');
         }
 
+        // Debug: Log token details (without exposing the actual token)
+        console.log('Auth0 ID token claims:', {
+          iss: claims.iss,
+          aud: claims.aud,
+          exp: claims.exp,
+          iat: claims.iat
+        });
+
         // Exchange Auth0 id_token for a Supabase session so auth.uid() is available for RLS.
-        const { error } = await supabase.auth.signInWithIdToken({
+        const { data, error } = await supabase.auth.signInWithIdToken({
           provider: 'auth0',
           token: idToken,
         });
-        if (error) throw error;
+        if (error) {
+          console.error('Supabase signInWithIdToken error:', error);
+          throw error;
+        }
 
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
