@@ -115,7 +115,7 @@ const RapidMemory = ({ questions }) => {
                   className={`p-4 rounded-lg border-2 ${
                     choice.correct
                       ? darkMode 
-                        ? 'border-green-500 bg-green-900/20' 
+                        ? 'border-green-400 bg-green-900/30' 
                         : 'border-green-500 bg-green-50'
                       : darkMode 
                         ? 'border-gray-600 bg-gray-700/50' 
@@ -124,12 +124,12 @@ const RapidMemory = ({ questions }) => {
                 >
                   <div className={`font-medium ${textSize === 'sm' ? 'text-sm' : textSize === 'lg' ? 'text-lg' : textSize === 'xl' ? 'text-xl' : ''} ${
                     choice.correct 
-                      ? 'text-green-900 dark:text-green-400' 
+                      ? 'text-green-900 dark:text-green-300' 
                       : darkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
                     {choice.id}. {choice.text}
                     {choice.correct && (
-                      <span className="ml-2 text-sm font-medium text-green-900 dark:text-green-400">
+                      <span className="ml-2 text-sm font-medium text-green-900 dark:text-green-300">
                         ✓ Correct
                       </span>
                     )}
