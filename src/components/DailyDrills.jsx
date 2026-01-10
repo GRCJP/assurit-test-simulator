@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
-import { CheckCircle, XCircle, ChevronLeft, ChevronRight, Trophy, Star, Zap, AlertCircle, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, ChevronLeft, ChevronRight, Trophy, Star, Zap, AlertCircle, RefreshCw, Settings } from 'lucide-react';
+import { isKindleDevice } from '../utils/deviceDetection';
 
 // DEFAULT_DRILL_SIZE is now dynamic based on exam deadline - see getDynamicDrillLimits()
 
@@ -122,6 +123,15 @@ const DailyDrills = ({ questions }) => {
   const [sessionStartTime, setSessionStartTime] = useState(null);
   const [totalTimeSpent, setTotalTimeSpent] = useState(0);
   const [isTimerActive, setIsTimerActive] = useState(false);
+  
+  // Settings overlay state
+  const [showSettings, setShowSettings] = useState(false);
+  const [isKindle, setIsKindle] = useState(false);
+  
+  // Detect Kindle device for fallback behavior
+  useEffect(() => {
+    setIsKindle(isKindleDevice());
+  }, []);
   
   // Daily goal: 10 minutes = 600 seconds
   const DAILY_GOAL_TIME = 600; // 10 minutes in seconds
@@ -1228,6 +1238,17 @@ const DailyDrills = ({ questions }) => {
                   </p>
                 )}
               </div>
+              <button
+                onClick={() => setShowSettings(true)}
+                className={`p-2 rounded-lg transition-all ${
+                  darkMode 
+                    ? 'hover:bg-slate-700 text-gray-300' 
+                    : 'hover:bg-gray-100 text-gray-600'
+                }`}
+                title="Practice Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
               {/* Session Management Buttons */}
               {practiceSession && practiceSession.status === 'active' && (
                 <>
@@ -1479,6 +1500,156 @@ const DailyDrills = ({ questions }) => {
           </div>
         )}
       </div>
+
+      {/* Settings Modal/Overlay - Kindle Safe */}
+      {showSettings && !isKindle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} rounded-xl p-6 max-w-md w-full shadow-xl`}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                Practice Settings
+              </h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className={`text-2xl ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-700 hover:text-gray-900'} transition-colors`}
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Practice Mode Info */}
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <h3 className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Current Session
+                </h3>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Questions: {summary.attempted}/{MINIMUM_QUESTIONS}
+                </p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Time: {formatTime(totalTimeSpent)}
+                </p>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Progress: {questionsProgress}%
+                </p>
+              </div>
+
+              {/* Study Plan Link */}
+              <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                <h3 className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  Study Plan
+                </h3>
+                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>
+                  Configure your daily goals and study schedule
+                </p>
+                <button
+                  onClick={() => {
+                    setShowSettings(false);
+                    // Navigate to dashboard without losing daily drills state
+                    setMode('dashboard');
+                  }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    darkMode 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  }`}
+                >
+                  Open Study Plan
+                </button>
+              </div>
+
+              {/* Kindle Detection Notice */}
+              {isKindle && (
+                <div className={`p-3 rounded-lg ${darkMode ? 'bg-yellow-900/20 border border-yellow-700' : 'bg-yellow-50 border border-yellow-200'}`}>
+                  <p className={`text-xs ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+                    📖 Kindle device detected: Some overlay features may be limited
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Close Button */}
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowSettings(false)}
+                className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                  darkMode
+                    ? 'bg-gray-600 text-white hover:bg-gray-700'
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Kindle-safe Inline Settings Panel */}
+      {showSettings && isKindle && (
+        <div className={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} rounded-xl p-6 mb-6 shadow-lg`}>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              Practice Settings
+            </h2>
+            <button
+              onClick={() => setShowSettings(false)}
+              className={`text-xl ${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-700 hover:text-gray-900'} transition-colors`}
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Practice Mode Info */}
+            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <h3 className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Current Session
+              </h3>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Questions: {summary.attempted}/{MINIMUM_QUESTIONS}
+              </p>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Time: {formatTime(totalTimeSpent)}
+              </p>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Progress: {questionsProgress}%
+              </p>
+            </div>
+
+            {/* Study Plan Link */}
+            <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+              <h3 className={`font-medium mb-2 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                Study Plan
+              </h3>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>
+                Configure your daily goals and study schedule
+              </p>
+              <button
+                onClick={() => {
+                  setShowSettings(false);
+                  // Navigate to dashboard without losing daily drills state
+                  setMode('dashboard');
+                }}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  darkMode 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                Open Study Plan
+              </button>
+            </div>
+          </div>
+
+          {/* Kindle Notice */}
+          <div className={`mt-4 p-3 rounded-lg ${darkMode ? 'bg-yellow-900/20 border border-yellow-700' : 'bg-yellow-50 border border-yellow-200'}`}>
+            <p className={`text-xs ${darkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
+              📖 Kindle device detected: Using inline settings panel for better compatibility
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
