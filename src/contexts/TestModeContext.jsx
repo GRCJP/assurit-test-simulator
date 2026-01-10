@@ -392,6 +392,7 @@ export const TestModeProvider = ({ children }) => {
   const [dailyDrillIndex, setDailyDrillIndex] = useState(0);
   const [dailyDrillOrder, setDailyDrillOrder] = useState([]);
   const [dailyDrillAnswers, setDailyDrillAnswers] = useState([]);
+  const [schemaVersion, setSchemaVersion] = useState(1);
   const [rapidIndex, setRapidIndex] = useState(0);
   const [testHistory, setTestHistory] = useState([]);
   const [simulatedIndex, setSimulatedIndex] = useState(0);
@@ -1099,6 +1100,21 @@ export const TestModeProvider = ({ children }) => {
       const savedDailyDrillIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillIndex')) || '0');
       const savedDailyDrillOrder = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillOrder')) || '[]');
       const savedDailyDrillAnswers = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillAnswers')) || '[]');
+      
+      // Normalize daily drill answers to prevent null crashes
+      const normalizedDailyDrillAnswers = Array.isArray(savedDailyDrillAnswers) 
+        ? savedDailyDrillAnswers.map(item => item == null ? { attempts: 0, correct: 0, missed: 0, lastWrongAt: null } : item)
+        : [];
+      
+      // Load schema version for future migrations
+      const savedSchemaVersion = parseInt(localStorage.getItem(keyForBank(questionBankId, 'schemaVersion')) || '1');
+      
+      // Migration logic for older schemas
+      let migratedDailyDrillAnswers = normalizedDailyDrillAnswers;
+      if (savedSchemaVersion < 1) {
+        // Add migration logic for version 0 -> 1 if needed
+        migratedDailyDrillAnswers = normalizedDailyDrillAnswers;
+      }
       const savedRapidIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'rapidIndex')) || '0');
       const savedTestHistory = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'testHistory')) || '[]');
       const savedSimulatedIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'simulatedIndex')) || '0');
@@ -1120,7 +1136,8 @@ export const TestModeProvider = ({ children }) => {
       setPracticeAnswers(savedPracticeAnswers);
       setDailyDrillIndex(Number.isFinite(savedDailyDrillIndex) ? savedDailyDrillIndex : 0);
       setDailyDrillOrder(Array.isArray(savedDailyDrillOrder) ? savedDailyDrillOrder : []);
-      setDailyDrillAnswers(Array.isArray(savedDailyDrillAnswers) ? savedDailyDrillAnswers : []);
+      setDailyDrillAnswers(migratedDailyDrillAnswers);
+      setSchemaVersion(savedSchemaVersion || 1);
       setRapidIndex(savedRapidIndex);
       setTestHistory(savedTestHistory);
       setSimulatedIndex(Number.isFinite(savedSimulatedIndex) ? savedSimulatedIndex : 0);
@@ -1238,6 +1255,10 @@ export const TestModeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'dailyDrillAnswers'), JSON.stringify(dailyDrillAnswers));
   }, [dailyDrillAnswers, questionBankId]);
+
+  useEffect(() => {
+    localStorage.setItem(keyForBank(questionBankId, 'schemaVersion'), schemaVersion.toString());
+  }, [schemaVersion, questionBankId]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'rapidIndex'), rapidIndex.toString());
