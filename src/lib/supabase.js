@@ -3,10 +3,17 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseSecretApiKey = import.meta.env.VITE_SUPABASE_SECRET_API_KEY;
 
-// Create client with modern Secret API Key
-export const supabase = supabaseSecretApiKey 
-  ? createClient(supabaseUrl, supabaseSecretApiKey)
-  : createClient(supabaseUrl);
+// Debug: Check if environment variables are loaded
+console.log('🔧 Supabase Config Debug:');
+console.log('URL:', supabaseUrl ? 'Loaded' : 'Missing');
+console.log('Key:', supabaseSecretApiKey ? 'Loaded' : 'Missing');
+
+// Create client with Secret API Key (required)
+if (!supabaseUrl || !supabaseSecretApiKey) {
+  throw new Error('Missing required Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseSecretApiKey);
 
 // Helper function to get user-specific table reference
 export const getUserDataRef = (userId, bankId = 'bankCCP') => {
