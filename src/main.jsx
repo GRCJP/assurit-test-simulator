@@ -1,3 +1,5 @@
+// Main application entry point
+// Updated: 2025-01-10 - Fixed redirect URI trim
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { Auth0Provider } from '@auth0/auth0-react'
@@ -29,7 +31,12 @@ try {
   const domain = import.meta.env.VITE_AUTH0_DOMAIN;
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
-  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || `${window.location.origin}/assurit-test-simulator`;
+  const redirectUri = (import.meta.env.VITE_AUTH0_REDIRECT_URI || `${window.location.origin}/assurit-test-simulator`).trim();
+
+  // Debug: Check for hidden characters in redirectUri
+  console.log('redirectUri:', JSON.stringify(redirectUri));
+  console.log('redirectUri length:', redirectUri?.length);
+  console.log('redirectUri ends with newline?', redirectUri?.endsWith('\n'));
 
   // Verify environment variables in production
   if (import.meta.env.PROD) {
