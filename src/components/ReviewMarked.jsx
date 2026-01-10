@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 
-const ReviewMarked = ({ questions }) => {
+const ReviewMarked = ({ questions, onClose }) => {
   const { textSize, darkMode, markedQuestions, markQuestion } = useTestMode();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -20,7 +20,7 @@ const ReviewMarked = ({ questions }) => {
               In Simulated Test mode, click "Mark for Review" on questions you want to revisit.
             </p>
             <button
-              onClick={() => window.location.reload()}
+              onClick={onClose || (() => window.location.reload())}
               className={`px-6 py-3 rounded-lg font-medium transition-colors ${
                 darkMode 
                   ? 'bg-[#4F83FF] text-white hover:bg-[#5A8DFF]' 
@@ -72,8 +72,12 @@ const ReviewMarked = ({ questions }) => {
                 onClick={() => {
                   // Clear all marked questions
                   markedQuestions.forEach(id => markQuestion(id));
-                  // Then refresh the page to go back to practice
-                  window.location.reload();
+                  // Then go back to practice
+                  if (onClose) {
+                    onClose();
+                  } else {
+                    window.location.reload();
+                  }
                 }}
                 className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
               >
@@ -189,7 +193,7 @@ const ReviewMarked = ({ questions }) => {
           </button>
 
           <button
-            onClick={() => window.location.reload()}
+            onClick={onClose || (() => window.location.reload())}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Back to Practice
