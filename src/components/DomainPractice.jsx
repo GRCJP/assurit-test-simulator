@@ -24,15 +24,6 @@ const DomainPractice = () => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [sessionComplete, setSessionComplete] = useState(false);
 
-  // Debug logging
-  console.log('🎯 DomainPractice: Component state:', {
-    domainFilteredQuestionsLength: domainFilteredQuestions?.length || 0,
-    domainFilterType,
-    selectedDomains,
-    currentIndex,
-    hasQuestions: !!domainFilteredQuestions && domainFilteredQuestions.length > 0
-  });
-
   const currentQuestion = domainFilteredQuestions[currentIndex];
   const currentAnswer = answers[currentQuestion?.id] || { selectedChoiceId: null, isCorrect: null };
 
