@@ -16,7 +16,7 @@ console.log('Key loaded:', supabaseAnonKey ? 'Yes' : 'No');
 
 // Fallback to hardcoded values if env vars not loaded
 const finalUrl = supabaseUrl || 'https://szyjviaolnaoywopfrqp.supabase.co';
-const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5anZpYW9sbmFveW93cGZycXAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNjQ4Njg1MSwiZXhwIjoyMDUyMDYyODUxfQ.sb_publishable_Xf-epctMBmqxCgCAjmnf7A_qF2ihuf4';
+const finalKey = supabaseAnonKey || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN5anZpYW9sbmFveW93cGZycXAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTczNjQ4Njg1MSwiZXhwIjoyMDUyMDYyODUxfQ.VT1beAkfN48VBF_esRhUrKgIetJ0DTGW-748Tv9pPcU';
 
 console.log('🔧 Final Config:');
 console.log('URL:', finalUrl);
