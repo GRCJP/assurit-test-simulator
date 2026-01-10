@@ -1,8 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import userDataSync from './UserDataSync.js';
 import questionsCCP from '../../data/questions_ccp_combined.json';
 import questionsCCA from '../../data/questions_cca.json';
+import { supabase } from '../lib/supabase.js';
 
 const TestModeContext = createContext();
 
@@ -12,6 +12,58 @@ export const useTestMode = () => {
     throw new Error('useTestMode must be used within a TestModeProvider');
   }
   return context;
+};
+
+const useSupabaseAuthShim = () => {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) console.error('Supabase getSession error:', error);
+      setSession(data.session || null);
+      setLoading(false);
+    });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, newSession) => {
+      if (!mounted) return;
+      setSession(newSession || null);
+      setLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      sub?.subscription?.unsubscribe?.();
+    };
+  }, []);
+
+  const rawUser = session?.user || null;
+  // Provide a compatible shape for existing code that expects Auth0's user.sub
+  const user = rawUser ? { ...rawUser, sub: rawUser.id } : null;
+  const isAuthenticated = !!rawUser;
+
+  const getAccessTokenSilently = useCallback(async () => {
+    // Not an Auth0 token; provided for compatibility with existing call sites.
+    // Our Supabase-backed UserDataSync ignores this argument.
+    return session?.access_token || null;
+  }, [session]);
+
+  const loginWithRedirect = useCallback(async () => {
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const redirectTo = isDev
+      ? 'http://localhost:4173/assurit-test-simulator/'
+      : 'https://grcjp.github.io/assurit-test-simulator/';
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'auth0',
+      options: { redirectTo },
+    });
+    if (error) throw error;
+  }, []);
+
+  return { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect, isLoading: loading };
 };
 
 const keyForBank = (bankId, key) => `cmmc_${bankId}_${key}`;
@@ -162,7 +214,7 @@ const getSystemDarkModePreference = () => {
 };
 
 export const TestModeProvider = ({ children }) => {
-  const { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect } = useAuth0();
+  const { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect } = useSupabaseAuthShim();
   
   // Feature flags system for safe development
   const [featureFlags, setFeatureFlags] = useState(() => {
@@ -772,9 +824,6 @@ export const TestModeProvider = ({ children }) => {
   // Debug function to test sync
   const debugSync = useCallback(async () => {
     console.log('=== DEBUG SYNC START ===');
-    console.log('Environment variables:');
-    console.log('VITE_AUTH0_DOMAIN:', import.meta.env.VITE_AUTH0_DOMAIN);
-    console.log('VITE_AUTH0_AUDIENCE:', import.meta.env.VITE_AUTH0_AUDIENCE);
     
     if (!isAuthenticated) {
       console.log('User is not authenticated');
@@ -784,14 +833,9 @@ export const TestModeProvider = ({ children }) => {
     console.log('User info:', user);
     console.log('Current progressStreaks:', progressStreaks);
     
-    // Test getting a token
+    // Test getting a session token (shim)
     try {
-      const token = await getAccessTokenSilently({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE || 'https://dev-cmmc-mastery.us.auth0.com/api/v2/',
-          scope: 'offline_access read:current_user update:current_user_metadata'
-        }
-      });
+      const token = await getAccessTokenSilently();
       console.log('Token obtained successfully:', token ? 'YES' : 'NO');
     } catch (error) {
       console.error('Error getting token:', error);
@@ -887,41 +931,23 @@ export const TestModeProvider = ({ children }) => {
     initializeFromURL();
   }, [initializeFromURL]);
 
-  // Monitor system health and handle re-authentication events
+  // Monitor system health
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    // Listen for auth0 token errors
-    const handleTokenError = (event) => {
-      console.log('🔐 Auth0 token error received:', event.detail);
-      // Show user-friendly message
-      alert('Your session has expired. Please log in again to sync your progress.');
-      // Trigger re-authentication
-      loginWithRedirect({
-        appState: { returnTo: window.location.pathname },
-        authorizationParams: {
-          prompt: 'login',
-        }
-      });
-    };
-
-    window.addEventListener('auth0_token_error', handleTokenError);
-
-    // Periodic health check
     const healthCheckInterval = setInterval(() => {
       if (userDataSync && typeof userDataSync.checkHealth === 'function') {
         const isHealthy = userDataSync.checkHealth();
         if (!isHealthy) {
-          console.warn('⚠️ UserDataSync health check failed - may need re-authentication');
+          console.warn('⚠️ UserDataSync health check failed');
         }
       }
     }, 5 * 60 * 1000); // Check every 5 minutes
 
     return () => {
-      window.removeEventListener('auth0_token_error', handleTokenError);
       clearInterval(healthCheckInterval);
     };
-  }, [isAuthenticated, loginWithRedirect, userDataSync]);
+  }, [isAuthenticated, userDataSync]);
 
   // Migrate old question bank data and ensure proper sync for current bank
   const migrateOldData = useCallback(async () => {

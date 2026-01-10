@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { TestModeProvider, useTestMode } from './contexts/TestModeContext';
 import Dashboard from './components/Dashboard';
 import DailyDrills from './components/DailyDrills';
@@ -24,6 +23,7 @@ import questionsCCA from '../data/questions_cca.json';
 
 import TestComponent from './components/TestComponent';
 import { isKindleDevice, shouldShowKindleMode } from './utils/deviceDetection';
+import { supabase } from './lib/supabase.js';
 
 // Navigation component
 const Navigation = ({ onLogout }) => {
@@ -321,32 +321,86 @@ const Navigation = ({ onLogout }) => {
   );
 };
 function App() {
-  const auth = useAuth0();
+  const [authLoading, setAuthLoading] = useState(true);
+  const [session, setSession] = useState(null);
   const isLocalhost = useMemo(() => {
     if (typeof window === 'undefined') return false;
     return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
   }, []);
 
   const allowLocalBypass = Boolean(import.meta.env.DEV && isLocalhost);
-  const bypassAuth = (
-    import.meta.env.VITE_BYPASS_AUTH === 'true' || 
+  const bypassAuth = useMemo(() => (
+    import.meta.env.VITE_BYPASS_AUTH === 'true' ||
     localStorage.getItem('cmmc_bypass_auth') === 'true'
-  );
+  ), []);
 
-  const { isLoading, isAuthenticated, user, loginWithRedirect, logout, error } = auth;
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!mounted) return;
+      if (error) {
+        console.error('Supabase getSession error:', error);
+      }
+      setSession(data.session || null);
+      setAuthLoading(false);
+    });
+
+    const { data: subscription } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!mounted) return;
+      setSession(newSession || null);
+      setAuthLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      subscription?.subscription?.unsubscribe?.();
+    };
+  }, []);
+
+  const isAuthenticated = !!session?.user;
+  const user = session?.user || null;
+
+  const signIn = async () => {
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const redirectTo = isDev
+      ? 'http://localhost:4173/assurit-test-simulator/'
+      : 'https://grcjp.github.io/assurit-test-simulator/';
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'auth0',
+      options: { redirectTo },
+    });
+    if (error) throw error;
+  };
+
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
 
   const [loadingTooLong, setLoadingTooLong] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!authLoading) {
       setLoadingTooLong(false);
       return undefined;
     }
     const t = setTimeout(() => setLoadingTooLong(true), 2500);
     return () => clearTimeout(t);
-  }, [isLoading]);
+  }, [authLoading]);
 
-  if (bypassAuth || auth.__missingProvider) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (bypassAuth) {
     return (
       <TestModeProvider>
         <AppContent
@@ -360,68 +414,17 @@ function App() {
     );
   }
 
-  if (error) {
-    const message = error && error.message ? error.message : String(error);
-    return (
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6">
-        <div className="max-w-2xl w-full bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h1 className="text-xl font-semibold">Authentication Error</h1>
-          <pre className="mt-3 text-xs text-gray-200 whitespace-pre-wrap break-words">{message}</pre>
-          <div className="mt-4 flex gap-2">
-            <button
-              type="button"
-              onClick={() => loginWithRedirect()}
-              className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
-            >
-              Try sign in again
-            </button>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 rounded-lg bg-gray-700 text-white font-medium hover:bg-gray-600"
-            >
-              Reload
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h1 className="text-xl font-semibold">Loading…</h1>
-          <p className="mt-2 text-sm text-gray-300">Preparing secure access.</p>
-          {loadingTooLong && (
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.setItem('cmmc_bypass_auth', 'true');
-                window.location.reload();
-              }}
-              className="mt-4 w-full px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700"
-            >
-              Continue without sign-in (offline mode)
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h1 className="text-2xl font-bold">CMMC Mastery</h1>
-          <p className="mt-2 text-sm text-gray-300">
-            Please sign in to access the study app.
+          <h1 className="text-xl font-semibold">Sign in</h1>
+          <p className="text-slate-300 mt-2">
+            Sign in to sync your progress across devices.
           </p>
           <button
             type="button"
-            onClick={() => loginWithRedirect()}
+            onClick={() => signIn()}
             className="mt-6 w-full px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700"
           >
             Sign in
@@ -433,7 +436,7 @@ function App() {
                 localStorage.setItem('cmmc_bypass_auth', 'true');
                 window.location.reload();
               }}
-              className="mt-3 w-full px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700"
+              className="mt-3 w-full px-4 py-2 rounded-lg bg-gray-700 text-white font-medium hover:bg-gray-600"
             >
               Continue without sign-in (local testing)
             </button>
@@ -444,9 +447,7 @@ function App() {
   }
 
   return (
-    <TestModeProvider>
-      <AppContent userEmail={user?.email || ''} onLogout={() => logout({ logoutParams: { returnTo: window.location.origin } })} />
-    </TestModeProvider>
+    <AppContent userEmail={user?.email || ''} onLogout={() => signOut()} />
   );
 }
 

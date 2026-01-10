@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 import { useTestMode } from '../contexts/TestModeContext';
 
 const SyncDiagnostic = () => {
-  const { user, isAuthenticated, getAccessTokenSilently } = useAuth0();
-  const { syncDataFromCloud, syncDataToCloud, progressStreaks } = useTestMode();
+  const { user, isAuthenticated, getAccessTokenSilently, loginWithRedirect, syncDataFromCloud, syncDataToCloud, progressStreaks } = useTestMode();
   const [testResults, setTestResults] = useState([]);
   const [isRunning, setIsRunning] = useState(false);
 
@@ -27,24 +25,18 @@ const SyncDiagnostic = () => {
       return;
     }
 
-    // Test 2: Token Retrieval
+    // Test 2: Session/Token Retrieval
     try {
-      const token = await getAccessTokenSilently({
-        authorizationParams: {
-          audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-          scope: 'offline_access read:current_user update:current_user_metadata'
-        }
-      });
-      addResult('Token Retrieval', true, '✅ Auth0 token retrieved successfully', { tokenLength: token.length });
+      const token = await getAccessTokenSilently();
+      addResult('Token Retrieval', true, '✅ Session token retrieved successfully', { tokenLength: token ? token.length : 0 });
     } catch (error) {
       addResult('Token Retrieval', false, `❌ Token failed: ${error.message}`, { error: error.toString() });
     }
 
     // Test 3: Environment Variables
     const envVars = {
-      AUTH0_DOMAIN: import.meta.env.VITE_AUTH0_DOMAIN,
-      AUTH0_AUDIENCE: import.meta.env.VITE_AUTH0_AUDIENCE,
-      REDIRECT_URI: import.meta.env.VITE_AUTH0_REDIRECT_URI,
+      SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+      SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'Present' : 'Missing',
     };
     addResult('Environment', true, '✅ Environment variables loaded', envVars);
 
@@ -54,6 +46,9 @@ const SyncDiagnostic = () => {
       addResult('Cloud Download', true, '✅ Data synced from cloud successfully');
     } catch (error) {
       addResult('Cloud Download', false, `❌ Cloud sync failed: ${error.message}`, { error: error.toString() });
+      if (String(error?.message || '').toLowerCase().includes('auth')) {
+        addResult('Re-Auth', false, '⚠️ Auth may be required. Try signing in again.');
+      }
     }
 
     // Test 5: Sync To Cloud

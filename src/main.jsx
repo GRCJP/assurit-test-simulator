@@ -1,6 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { Auth0Provider } from '@auth0/auth0-react'
 import { TestModeProvider } from './contexts/TestModeContext'
 import './index.css'
 import App from './App.jsx'
@@ -26,51 +25,13 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 try {
-  const domain = import.meta.env.VITE_AUTH0_DOMAIN;
-  const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
-  const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
-  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || `${window.location.origin}/assurit-test-simulator`;
-  const bypassAuth = import.meta.env.VITE_BYPASS_AUTH === 'true';
-
-  console.log('Auth0 config check:', { domain, clientId, audience, redirectUri, bypassAuth });
-
-  // Create a simple fallback component for development without Auth0
-  const AppWithoutAuth = () => <App />;
-
-  if (bypassAuth || !domain || !clientId) {
-    if (bypassAuth) {
-      console.log('Auth bypass enabled by VITE_BYPASS_AUTH flag. Rendering app without Auth0...');
-    } else {
-      console.warn('Auth0 configuration missing. Running in development mode without authentication.');
-    }
-    console.log('Rendering app without Auth0...');
-    createRoot(document.getElementById('root')).render(
-      <StrictMode>
-        <TestModeProvider>
-          <AppWithoutAuth />
-        </TestModeProvider>
-      </StrictMode>,
-    );
-  } else {
-    console.log('Rendering app with Auth0...');
-    createRoot(document.getElementById('root')).render(
-      <StrictMode>
-        <Auth0Provider
-          domain={domain}
-          clientId={clientId}
-          audience={audience}
-          cacheLocation="localstorage"
-          useRefreshTokens={true}
-          authorizationParams={{
-            redirect_uri: redirectUri,
-            scope: 'openid profile email offline_access read:current_user update:current_user_metadata',
-          }}
-        >
-          <App />
-        </Auth0Provider>
-      </StrictMode>,
-    );
-  }
+  createRoot(document.getElementById('root')).render(
+    <StrictMode>
+      <TestModeProvider>
+        <App />
+      </TestModeProvider>
+    </StrictMode>,
+  );
 } catch (err) {
   console.error('Error in main.jsx:', err);
   showFatalError(err);
