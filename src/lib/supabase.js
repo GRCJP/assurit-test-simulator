@@ -2,7 +2,10 @@
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-const encodeEq = (value) => `eq.${encodeURIComponent(String(value))}`;
+// IMPORTANT: Do not pre-encode values passed to URLSearchParams.
+// URLSearchParams will encode them exactly once.
+// This keeps Auth0 user.sub as raw `auth0|...` at the callsite while producing `auth0%7C...` on the wire.
+const encodeEq = (value) => `eq.${String(value)}`;
 
 // Create a minimal client with only database operations
 const supabase = {
