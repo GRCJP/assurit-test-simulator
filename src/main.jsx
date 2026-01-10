@@ -29,7 +29,10 @@ try {
   const domain = import.meta.env.VITE_AUTH0_DOMAIN;
   const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
   const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
-  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || `${window.location.origin}/assurit-test-simulator`;
+  const redirectUri = import.meta.env.VITE_AUTH0_REDIRECT_URI || 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+      ? 'http://localhost:4173/assurit-test-simulator'
+      : `${window.location.origin}/assurit-test-simulator`);
 
   createRoot(document.getElementById('root')).render(
     <StrictMode>
