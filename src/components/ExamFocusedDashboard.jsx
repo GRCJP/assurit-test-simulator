@@ -413,9 +413,6 @@ const ExamFocusedDashboard = ({ questions: questionsProp }) => {
                   <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                     Daily goal: {computeAutoGoals(studyDays).dailyGoal} questions
                   </p>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                    Target questions: {computeAutoGoals(studyDays).targetQuestions} questions
-                  </p>
                 </div>
               )}
 
