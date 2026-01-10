@@ -1339,6 +1339,23 @@ const DailyDrills = ({ questions }) => {
                   Complete Drill Early ({summary.attempted})
                 </button>
               )}
+              
+              {/* Always available Complete Drill option */}
+              {!showCelebration && summary.attempted > 0 && (
+                <button
+                  type="button"
+                  onClick={completeSession}
+                  className={`inline-flex items-center rounded-lg border-2 px-4 py-2 text-sm font-bold shadow-lg transition-all transform hover:scale-105 ${
+                    darkMode 
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 border-blue-500' 
+                      : 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600 border-blue-400'
+                  }`}
+                  title="Complete drill now and save progress"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Complete Drill ({summary.attempted})
+                </button>
+              )}
             </div>
 
             <button
