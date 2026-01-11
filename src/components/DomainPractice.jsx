@@ -1,6 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 import { ArrowLeft, ArrowRight, Target, CheckCircle, XCircle } from 'lucide-react';
+
+// Fisher-Yates shuffle algorithm for better randomization
+const shuffle = (arr) => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
+// Shuffle answer choices for better memorization
+const shuffleChoices = (choices) => {
+  if (!choices || !Array.isArray(choices)) return [];
+  
+  // Create array with choices and their original positions for consistent letter mapping
+  const shuffled = shuffle(choices.map((choice, originalIndex) => ({ ...choice, originalIndex })));
+  
+  return shuffled;
+};
 
 const DomainPractice = () => {
   const {
@@ -26,6 +46,28 @@ const DomainPractice = () => {
 
   const currentQuestion = domainFilteredQuestions[currentIndex];
   const currentAnswer = answers[currentQuestion?.id] || { selectedChoiceId: null, isCorrect: null };
+
+  // Debug logging to help identify rendering issues
+  console.log('🎯 DomainPractice Debug:', {
+    domainFilteredQuestionsLength: domainFilteredQuestions.length,
+    currentIndex,
+    currentQuestionId: currentQuestion?.id,
+    hasCurrentQuestion: !!currentQuestion,
+    sessionComplete
+  });
+
+  // Memoize shuffled choices to prevent re-shuffling on every render
+  const shuffledChoicesRef = useRef([]);
+  
+  // Only shuffle when question ID actually changes
+  useEffect(() => {
+    if (currentQuestion?.id !== shuffledChoicesRef.current.questionId) {
+      shuffledChoicesRef.current = currentQuestion?.choices ? shuffleChoices(currentQuestion.choices) : [];
+      shuffledChoicesRef.current.questionId = currentQuestion?.id;
+    }
+  }, [currentQuestion?.id]);
+  
+  const shuffledChoices = shuffledChoicesRef.current;
 
   // Calculate session statistics
   const sessionStats = {
@@ -115,7 +157,7 @@ const DomainPractice = () => {
     );
   }
 
-  if (!currentQuestion && !sessionComplete) {
+  if (!currentQuestion && domainFilteredQuestions.length > 0 && !sessionComplete) {
     return (
       <div className={`min-h-screen ${darkMode ? 'bg-slate-900' : 'bg-gray-50'} flex items-center justify-center p-4`}>
         <div className={`text-center ${darkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -267,7 +309,7 @@ const DomainPractice = () => {
 
           {/* Answer Choices */}
           <div className="space-y-3 mb-6">
-            {currentQuestion.choices?.map((choice) => {
+            {shuffledChoices.map((choice) => {
               const isSelected = currentAnswer.selectedChoiceId === choice.id;
               const isCorrect = choice.correct;
               
