@@ -1385,7 +1385,7 @@ const DailyDrills = ({ questions }) => {
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                   darkMode ? 'bg-purple-600/20 text-purple-400' : 'bg-purple-100 text-purple-700'
                 }`}>
-                  {currentQuestion.domain}
+                  {currentQuestion.domain} {currentQuestion.important && '*'}
                 </span>
               {currentAnswer.isCorrect !== null && (
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${

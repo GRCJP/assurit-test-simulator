@@ -89,7 +89,7 @@ const RapidMemory = ({ questions }) => {
         <div className={`rounded-lg p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
           <div className="flex justify-between items-start mb-4">
             <div className={`text-sm font-medium ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
-              {q.domain || 'General'}
+              {q.domain || 'General'} {q.important && '*'}
             </div>
             <button
               onClick={() => markQuestion(q.id)}

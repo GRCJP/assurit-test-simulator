@@ -675,6 +675,8 @@ export const TestModeProvider = ({ children }) => {
         domainMasteryRemote,
         questionStatsRemote,
         missedQuestionsRemote,
+        missedQueueRemote,
+        missedMetaRemote,
         markedQuestionsRemote,
         examSimMarkedQuestionsRemote,
         simulatedAnswersRemote,
@@ -691,6 +693,8 @@ export const TestModeProvider = ({ children }) => {
         getUserData(supabaseUserId, questionBankId, 'domainMastery'),
         getUserData(supabaseUserId, questionBankId, 'questionStats'),
         getUserData(supabaseUserId, questionBankId, 'missedQuestions'),
+        getUserData(supabaseUserId, questionBankId, 'missedQueue'),
+        getUserData(supabaseUserId, questionBankId, 'missedMeta'),
         getUserData(supabaseUserId, questionBankId, 'markedQuestions'),
         getUserData(supabaseUserId, questionBankId, 'examSimMarkedQuestions'),
         getUserData(supabaseUserId, questionBankId, 'simulatedAnswers'),
@@ -771,6 +775,16 @@ export const TestModeProvider = ({ children }) => {
           setMissedQuestions(normalizeRestoredData(missedQuestionsRemote, 'missedQuestions'));
           dataUpdated = true;
         }
+      }
+
+      if (isValidData(missedQueueRemote)) {
+        setMissedQueue(normalizeRestoredData(missedQueueRemote, 'missedQueue'));
+        dataUpdated = true;
+      }
+
+      if (isValidData(missedMetaRemote)) {
+        setMissedMeta(normalizeRestoredData(missedMetaRemote, 'missedMeta'));
+        dataUpdated = true;
       }
 
       if (isValidData(markedQuestionsRemote)) {
@@ -1360,19 +1374,27 @@ export const TestModeProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'missedQuestions'), JSON.stringify(missedQuestions));
-  }, [missedQuestions, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('missedQuestions', missedQuestions);
+  }, [missedQuestions, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'missedQueue'), JSON.stringify(missedQueue));
-  }, [missedQueue, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('missedQueue', missedQueue);
+  }, [missedQueue, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'missedMeta'), JSON.stringify(missedMeta));
-  }, [missedMeta, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('missedMeta', missedMeta);
+  }, [missedMeta, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'markedQuestions'), JSON.stringify([...markedQuestions]));
-  }, [markedQuestions, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('markedQuestions', [...markedQuestions]);
+  }, [markedQuestions, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'examSimMarkedQuestions'), JSON.stringify([...examSimMarkedQuestions]));
@@ -1420,7 +1442,9 @@ export const TestModeProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'testHistory'), JSON.stringify(testHistory));
-  }, [testHistory, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('testHistory', testHistory);
+  }, [testHistory, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'simulatedIndex'), simulatedIndex.toString());
@@ -1469,11 +1493,15 @@ export const TestModeProvider = ({ children }) => {
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'spacedRepetition'), JSON.stringify(spacedRepetition));
-  }, [spacedRepetition, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('spacedRepetition', spacedRepetition);
+  }, [spacedRepetition, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'adaptiveDifficulty'), JSON.stringify(adaptiveDifficulty));
-  }, [adaptiveDifficulty, questionBankId]);
+    // Sync to cloud if authenticated
+    syncDataToCloud('adaptiveDifficulty', adaptiveDifficulty);
+  }, [adaptiveDifficulty, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'progressStreaks'), JSON.stringify(progressStreaks));

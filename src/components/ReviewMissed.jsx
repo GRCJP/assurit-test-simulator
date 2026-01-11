@@ -485,7 +485,7 @@ const ReviewMissed = () => {
         {q && (
           <div className={`rounded-lg p-6 mb-6 ${darkMode ? 'bg-gray-800' : 'bg-white shadow-lg'}`}>
             <div className={`text-sm font-medium mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>
-              {q?.domain || 'Unknown Domain'}
+              {q?.domain || 'Unknown Domain'} {q?.important && '*'}
             </div>
             
             <div className="flex items-start gap-3">

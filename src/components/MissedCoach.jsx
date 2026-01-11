@@ -402,7 +402,7 @@ const MissedCoach = () => {
             <span className={`text-sm font-medium px-3 py-1 rounded-lg ${
               darkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-700'
             }`}>
-              {q.domain || 'General'}
+              {q.domain || 'General'} {q.important && '*'}
             </span>
           </div>
           
@@ -423,7 +423,7 @@ const MissedCoach = () => {
               
               if (showResult) {
                 if (isCorrect) {
-                  buttonClass += ` ${darkMode ? 'bg-green-900/30 border-green-500 text-green-400' : 'bg-green-50 border-green-200 text-green-700'}`;
+                  buttonClass += ` ${darkMode ? 'bg-green-900/30 border-green-500 text-green-200' : 'bg-green-50 border-green-200 text-green-700'}`;
                 } else if (isSelected && !isCorrect) {
                   buttonClass += ` ${darkMode ? 'bg-red-900/30 border-red-500 text-red-400' : 'bg-red-50 border-red-200 text-red-700'}`;
                 }

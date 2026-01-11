@@ -46,7 +46,9 @@ const SimulatedTest = ({ questions }) => {
     missedQuestions, 
     markExamSimQuestion, 
     examSimMarkedQuestions, 
-    setMode 
+    markedQuestions,
+    setMode,
+    questionBankId 
   } = useTestMode();
   
   // Use persistent timer state from context
@@ -678,7 +680,7 @@ const SimulatedTest = ({ questions }) => {
                         <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                           darkMode ? 'bg-amber-600/20 text-amber-400' : 'bg-amber-100 text-amber-700'
                         }`}>
-                          {question.domain}
+                          {question.domain} {question.important && '*'}
                         </span>
                       </div>
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -705,7 +707,7 @@ const SimulatedTest = ({ questions }) => {
                             className={`p-3 rounded-lg border ${
                               isCorrectAnswer
                                 ? darkMode 
-                                  ? 'bg-green-600/20 border-green-500 text-green-400' 
+                                  ? 'bg-green-600/20 border-green-500 text-green-200' 
                                   : 'bg-green-50 border-green-500 text-green-900'
                                 : isSelected
                                 ? darkMode 

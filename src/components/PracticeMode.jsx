@@ -24,7 +24,7 @@ const shuffleChoices = (choices) => {
   return shuffled;
 };
 
-const PracticeMode = ({ questions }) => {
+const PracticeMode = ({ questions, questionBankId }) => {
   const { 
     textSize, 
     darkMode, 
@@ -165,12 +165,71 @@ const PracticeMode = ({ questions }) => {
   }, [isDragging]);
 
   if (!currentQuestion) {
+    const hasCompletedAll = completedQuestions.size > 0 && availableQuestions.length === 0;
     return (
       <div className="w-full max-w-5xl mx-auto">
-        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'} rounded-xl p-6`}>
-          <h1 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'}`}>
-            No questions loaded
+        <div className={`${darkMode ? 'bg-gray-800' : 'bg-white shadow-sm'} rounded-xl p-6 text-center`}>
+          <h1 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-slate-900'} mb-4`}>
+            {hasCompletedAll ? "🎉 All Questions Completed!" : "No questions loaded"}
           </h1>
+          <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-6`}>
+            {hasCompletedAll 
+              ? "Great job! You've completed all available questions. Try reviewing missed questions or switch to a different mode."
+              : "Questions are not loading properly. Please try refreshing the page or switching question banks."
+            }
+          </p>
+          <div className="flex gap-3 justify-center">
+            {hasCompletedAll && (
+              <button
+                type="button"
+                onClick={() => setMode('reviewMissed')}
+                className={`px-4 py-2 rounded-lg font-medium ${
+                  darkMode ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                Review Missed Questions
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setCompletedQuestions(new Set());
+                setCurrentIndex(0);
+              }}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                darkMode ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-500 text-white hover:bg-green-600'
+              }`}
+            >
+              Reset Progress
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('dashboard')}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                darkMode ? 'bg-gray-600 text-white hover:bg-gray-700' : 'bg-gray-500 text-white hover:bg-gray-600'
+              }`}
+            >
+              Back to Dashboard
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                console.log('🔍 Debug Info:');
+                console.log('- Total questions:', questions?.length);
+                console.log('- Available questions:', availableQuestions?.length);
+                console.log('- Completed questions:', completedQuestions.size);
+                console.log('- Current index:', currentIndex);
+                console.log('- Current question:', currentQuestion?.id);
+                console.log('- Question bank ID:', questionBankId || 'not provided');
+                alert(`Debug: Total=${questions?.length}, Available=${availableQuestions?.length}, Completed=${completedQuestions.size}`);
+              }}
+              className={`px-4 py-2 rounded-lg font-medium ${
+                darkMode ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-500 text-white hover:bg-purple-600'
+              }`}
+            >
+              🔍 Debug
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -262,7 +321,7 @@ const PracticeMode = ({ questions }) => {
                   {currentQuestion.domain}
                 </p>
                 <h2 className={`mt-1 text-base font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                  Question {adjustedIndex + 1}
+                  Question {adjustedIndex + 1} {currentQuestion.important && '*'}
                 </h2>
               </div>
             </div>
