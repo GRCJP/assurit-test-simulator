@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 
 const ReviewMarked = ({ questions, onClose }) => {
@@ -7,7 +7,29 @@ const ReviewMarked = ({ questions, onClose }) => {
   const [showExplanation, setShowExplanation] = useState(false);
 
   // Get the actual marked questions from the full questions list
-  const markedQuestionsList = questions.filter(q => markedQuestions.has(q.id));
+  // Memoize to prevent excessive re-filtering on every render
+  const markedQuestionsList = useMemo(() => {
+    return questions.filter(q => markedQuestions.has(q.id));
+  }, [questions, markedQuestions]);
+
+  const handleNext = useCallback(() => {
+    if (currentQuestion < markedQuestionsList.length - 1) {
+      setCurrentQuestion(prev => prev + 1);
+      setShowExplanation(false);
+    }
+  }, [currentQuestion, markedQuestionsList.length]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(prev => prev - 1);
+      setShowExplanation(false);
+    }
+  }, [currentQuestion]);
+
+  const handleJump = useCallback((index) => {
+    setCurrentQuestion(index);
+    setShowExplanation(false);
+  }, []);
 
   if (markedQuestionsList.length === 0) {
     return (
@@ -37,25 +59,6 @@ const ReviewMarked = ({ questions, onClose }) => {
 
   const q = markedQuestionsList[currentQuestion];
   const selectedAnswer = markedQuestions.get(q.id);
-
-  const handleNext = () => {
-    if (currentQuestion < markedQuestionsList.length - 1) {
-      setCurrentQuestion(prev => prev + 1);
-      setShowExplanation(false);
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentQuestion > 0) {
-      setCurrentQuestion(prev => prev - 1);
-      setShowExplanation(false);
-    }
-  };
-
-  const handleJump = (index) => {
-    setCurrentQuestion(index);
-    setShowExplanation(false);
-  };
 
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'} p-4`}>
