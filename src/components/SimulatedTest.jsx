@@ -307,7 +307,7 @@ const SimulatedTest = ({ questions }) => {
   
   // Show results screen
   if (showResults) {
-    const markedQuestionsList = Array.from(markedQuestions).map(id => 
+    const markedQuestionsList = Array.from(markedQuestions.keys()).map(id => 
       simulatedOrder.find(q => q.id === id)
     ).filter(Boolean);
     
@@ -638,7 +638,7 @@ const SimulatedTest = ({ questions }) => {
 
   // Show marked questions review screen
   if (showMarkedReview) {
-    const markedQuestionsList = Array.from(markedQuestions).map(id => 
+    const markedQuestionsList = Array.from(markedQuestions.keys()).map(id => 
       simulatedOrder.find(q => q.id === id)
     ).filter(Boolean);
 
