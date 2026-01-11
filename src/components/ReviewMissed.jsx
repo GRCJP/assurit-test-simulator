@@ -528,7 +528,7 @@ const ReviewMissed = () => {
                       {attempt.selectedChoiceId === choice?.id && (
                         <span className={`ml-auto font-medium ${
                           choice?.correct 
-                            ? 'text-green-900 dark:text-green-400' 
+                            ? 'text-green-900 dark:text-green-200' 
                             : 'text-red-600 dark:text-red-400'
                         }`}>
                           {choice?.correct ? '✓ Correct' : '✗ Incorrect'}

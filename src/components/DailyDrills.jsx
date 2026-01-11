@@ -922,7 +922,7 @@ const DailyDrills = ({ questions }) => {
               <div className="text-5xl font-bold mb-2 bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                 {getAccuracy()}%
               </div>
-              <div className={`text-lg font-medium ${darkMode ? 'text-green-300' : 'text-green-700'}`}>
+              <div className={`text-lg font-medium ${darkMode ? 'text-green-200' : 'text-green-700'}`}>
                 {summary.correct}/{summary.attempted} questions correct
               </div>
             </div>
@@ -1287,7 +1287,7 @@ const DailyDrills = ({ questions }) => {
           {/* Stats */}
           <div className="grid grid-cols-4 gap-4 mt-4">
             <div className={`text-center ${darkMode ? 'bg-slate-700' : 'bg-gray-50'} rounded-lg p-3`}>
-              <p className={`text-2xl font-bold ${darkMode ? 'text-green-400' : 'text-green-600'}`}>
+              <p className={`text-2xl font-bold ${darkMode ? 'text-green-200' : 'text-green-600'}`}>
                 {summary.correct}
               </p>
               <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-700'}`}>Correct</p>
@@ -1388,7 +1388,7 @@ const DailyDrills = ({ questions }) => {
               {currentAnswer.isCorrect !== null && (
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                   currentAnswer.isCorrect
-                    ? darkMode ? 'bg-green-600/20 text-green-400' : 'bg-green-100 text-green-700'
+                    ? darkMode ? 'bg-green-600/20 text-green-200' : 'bg-green-100 text-green-800'
                     : darkMode ? 'bg-red-600/20 text-red-400' : 'bg-red-100 text-red-700'
                 }`}>
                   {currentAnswer.isCorrect ? '✓ Correct' : '✗ Incorrect'}

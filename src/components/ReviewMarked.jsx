@@ -189,7 +189,7 @@ const ReviewMarked = ({ questions, onClose }) => {
                       {choice.text}
                     </span>
                     {isCorrect && (
-                      <span className="ml-auto text-green-600 dark:text-green-400 font-medium">
+                      <span className="ml-auto text-green-800 dark:text-green-200 font-medium">
                         ✓ Correct Answer
                       </span>
                     )}
