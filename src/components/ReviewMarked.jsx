@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 
-const ReviewMarked = ({ questions, onClose }) => {
+const ReviewMarked = ({ questions, onClose, examMode = false }) => {
   const { textSize, darkMode, markedQuestions, markQuestion } = useTestMode();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -49,7 +49,7 @@ const ReviewMarked = ({ questions, onClose }) => {
                   : 'bg-[#4C6EF5] text-white hover:bg-[#5A7CFF]'
               }`}
             >
-              Back to Practice
+              {examMode ? 'Back to Exam' : 'Back to Practice'}
             </button>
           </div>
         </div>
@@ -188,12 +188,12 @@ const ReviewMarked = ({ questions, onClose }) => {
                     <span className={textSize === 'sm' ? 'text-sm' : textSize === 'lg' ? 'text-lg' : textSize === 'xl' ? 'text-xl' : ''}>
                       {choice.text}
                     </span>
-                    {isCorrect && (
+                    {isCorrect && !examMode && (
                       <span className="ml-auto text-green-800 dark:text-green-200 font-medium">
                         ✓ Correct Answer
                       </span>
                     )}
-                    {isSelected && !isCorrect && (
+                    {isSelected && !isCorrect && !examMode && (
                       <span className="ml-auto text-red-600 dark:text-red-400 font-medium">
                         ✗ Your Answer
                       </span>
@@ -204,21 +204,23 @@ const ReviewMarked = ({ questions, onClose }) => {
             })}
           </div>
 
-          {/* Explanation Toggle */}
-          <button
-            onClick={() => setShowExplanation(!showExplanation)}
-            className={`w-full p-3 rounded-lg border-2 mb-4 transition-all ${
-              showExplanation
-                ? darkMode ? 'border-blue-500 bg-blue-900/20' : 'border-blue-500 bg-blue-50'
-                : darkMode ? 'border-gray-700 bg-gray-800 hover:border-gray-600' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-            }`}
-          >
-            <div className="text-center font-medium">
-              {showExplanation ? 'Hide Explanation' : 'Show Explanation'}
-            </div>
-          </button>
+          {/* Explanation Toggle - Hidden in exam mode */}
+          {!examMode && (
+            <button
+              onClick={() => setShowExplanation(!showExplanation)}
+              className={`w-full p-3 rounded-lg border-2 mb-4 transition-all ${
+                showExplanation
+                  ? darkMode ? 'border-blue-500 bg-blue-900/20' : 'border-blue-500 bg-blue-50'
+                  : darkMode ? 'border-gray-700 bg-gray-800 hover:border-gray-600' : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+              }`}
+            >
+              <div className="text-center font-medium">
+                {showExplanation ? 'Hide Explanation' : 'Show Explanation'}
+              </div>
+            </button>
+          )}
 
-          {showExplanation && q.explanation && (
+          {showExplanation && q.explanation && !examMode && (
             <div className={`p-4 rounded-lg ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
               <h3 className="font-semibold mb-2">Explanation:</h3>
               <p className={`${textSize === 'sm' ? 'text-sm' : textSize === 'lg' ? 'text-lg' : textSize === 'xl' ? 'text-xl' : ''} whitespace-pre-line`}>
@@ -246,7 +248,7 @@ const ReviewMarked = ({ questions, onClose }) => {
             onClick={onClose || (() => window.location.reload())}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Back to Practice
+            {examMode ? 'Back to Exam' : 'Back to Practice'}
           </button>
 
           <button

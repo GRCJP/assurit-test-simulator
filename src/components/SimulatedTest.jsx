@@ -455,7 +455,7 @@ const SimulatedTest = ({ questions }) => {
                 }`}
                 disabled={markedQuestionsList.length === 0}
               >
-                🎯 Review Marked Questions
+                🎯 Review Marked Questions {markedQuestionsList.length > 0 && `(${markedQuestionsList.length})`}
               </button>
               <button
                 onClick={handleReviewMissed}
@@ -962,6 +962,7 @@ const SimulatedTest = ({ questions }) => {
         <ReviewMarked
           questions={simulatedOrder}
           onClose={() => setShowMarkedReview(false)}
+          examMode={true}
         />
       )}
       </div>
