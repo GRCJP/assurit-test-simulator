@@ -235,7 +235,7 @@ const SimulatedTest = ({ questions }) => {
     setTestScore({ correct: 0, total: 0, percentage: 0 });
     
     // Start a fresh exam
-    startSimulatedTest();
+    startSimulatedTest(questions);
   };
   
   // Handle test completion

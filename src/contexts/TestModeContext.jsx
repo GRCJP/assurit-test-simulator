@@ -1541,9 +1541,9 @@ export const TestModeProvider = ({ children }) => {
     setTestHistory([]);
   };
 
-  const startSimulatedTest = (questions = null) => {
-    // Use provided questions or fall back to available questions in context
-    const questionsToUse = questions || questionsById.size > 0 ? Array.from(questionsById.values()) : [];
+  const startSimulatedTest = (questions) => {
+    // Handle case where questions is undefined or null
+    const questionsToUse = questions || [];
     const shuffled = shuffleInPlace([...questionsToUse]);
     setSimulatedOrder(shuffled);
     setSimulatedIndex(0);
