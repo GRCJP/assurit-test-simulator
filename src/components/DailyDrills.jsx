@@ -1417,10 +1417,10 @@ const DailyDrills = ({ questions }) => {
                   currentAnswer.isCorrect !== null
                     ? currentAnswer.selectedChoiceId === choice.id
                       ? choice.correct
-                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-green-50 border-green-500 text-green-900'
+                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-200' : 'bg-green-50 border-green-500 text-green-900'
                         : darkMode ? 'bg-red-600/20 border-red-500 text-red-400' : 'bg-red-50 border-red-500 text-red-700'
                       : choice.correct
-                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-400' : 'bg-green-50 border-green-500 text-green-900'
+                        ? darkMode ? 'bg-green-600/20 border-green-500 text-green-200' : 'bg-green-50 border-green-500 text-green-900'
                         : darkMode ? 'bg-slate-700 border-slate-600 text-gray-400' : 'bg-gray-50 border-gray-200 text-gray-700'
                     : darkMode 
                       ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600 hover:border-slate-500' 
@@ -1447,12 +1447,12 @@ const DailyDrills = ({ questions }) => {
                   <span className="flex-1">{choice.text}</span>
                   {currentAnswer.isCorrect !== null && currentAnswer.selectedChoiceId === choice.id && (
                     <span className="ml-2">
-                      {choice.correct ? <CheckCircle className="w-5 h-5 text-green-500" /> : <XCircle className="w-5 h-5 text-red-500" />}
+                      {choice.correct ? <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-300" /> : <XCircle className="w-5 h-5 text-red-500" />}
                     </span>
                   )}
                   {currentAnswer.isCorrect !== null && currentAnswer.selectedChoiceId !== choice.id && choice.correct && (
                     <span className="ml-2">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-300" />
                     </span>
                   )}
                 </div>
@@ -1469,7 +1469,7 @@ const DailyDrills = ({ questions }) => {
             }`}>
               <h3 className={`font-medium mb-2 ${
                 currentAnswer.isCorrect 
-                  ? darkMode ? 'text-green-400' : 'text-green-700'
+                  ? darkMode ? 'text-green-200' : 'text-green-700'
                   : darkMode ? 'text-blue-400' : 'text-blue-700'
               }`}>
                 💡 {currentAnswer.isCorrect ? 'Correct Answer Explanation:' : 'Explanation:'}
