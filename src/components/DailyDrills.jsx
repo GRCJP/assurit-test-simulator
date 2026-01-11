@@ -1340,7 +1340,7 @@ const DailyDrills = ({ questions }) => {
                 </button>
               )}
               
-              {/* Always available Complete Drill option */}
+              {/* Always available Complete Drill option - Added for users who want to finish without meeting streak requirements */}
               {!showCelebration && summary.attempted > 0 && (
                 <button
                   type="button"
