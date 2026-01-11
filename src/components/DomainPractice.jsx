@@ -23,6 +23,8 @@ const shuffleChoices = (choices) => {
 };
 
 const DomainPractice = () => {
+  console.log('🎯 DomainPractice COMPONENT MOUNTED! Mode:', mode);
+  
   const {
     darkMode,
     mode,

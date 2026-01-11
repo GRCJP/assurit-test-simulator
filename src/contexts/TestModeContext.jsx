@@ -2858,7 +2858,7 @@ export const TestModeProvider = ({ children }) => {
   const [domainFilterType, setDomainFilterType] = useState('all');
 
   const startDomainPractice = (domains, filteredQuestions, filterType = 'all') => {
-    console.log('🎯 Starting domain-specific practice:', { domains, filterType, questionCount: filteredQuestions.length });
+    console.log('🎯 startDomainPractice CALLED!', { domains, filterType, questionCount: filteredQuestions.length });
     
     setSelectedDomains(domains);
     setDomainFilteredQuestions(filteredQuestions);
