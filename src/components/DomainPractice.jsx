@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 import { ArrowLeft, ArrowRight, Target, CheckCircle, XCircle } from 'lucide-react';
 
 const DomainPractice = () => {
-  console.log('🎯 DomainPractice COMPONENT MOUNTED! Mode:', mode);
-  
   const {
     darkMode,
     mode,
@@ -28,15 +26,6 @@ const DomainPractice = () => {
 
   const currentQuestion = domainFilteredQuestions[currentIndex];
   const currentAnswer = answers[currentQuestion?.id] || { selectedChoiceId: null, isCorrect: null };
-
-  // Debug logging to help identify rendering issues
-  console.log('🎯 DomainPractice Debug:', {
-    domainFilteredQuestionsLength: domainFilteredQuestions.length,
-    currentIndex,
-    currentQuestionId: currentQuestion?.id,
-    hasCurrentQuestion: !!currentQuestion,
-    sessionComplete
-  });
 
   // Calculate session statistics
   const sessionStats = {
