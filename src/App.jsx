@@ -476,7 +476,7 @@ function AppContent({ userEmail, onLogout }) {
               {mode === 'practice' && <PracticeMode questions={questions} />}
               {mode === 'dashboard' && <Dashboard questions={questions} />}
               {mode === 'dailyDrills' && <DailyDrills questions={questions} />}
-              {/* {mode === 'domainPractice' && <DomainPractice questions={questions} />} */}
+              {mode === 'domainPractice' && <DomainPractice questions={questions} />}
               {mode === 'simulated' && (
                 (() => {
                 console.log('🔥 RENDERING SIMULATED TEST! Mode:', mode);
