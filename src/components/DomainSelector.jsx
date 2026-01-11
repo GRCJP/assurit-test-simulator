@@ -125,6 +125,27 @@ const DomainSelector = ({
         domainQuestionsCount: domainQuestions.length,
         missedForDomainCount: missedForDomain.length
       });
+      
+      // Show helpful message to user
+      if (filterType === 'missed' && missedForDomain.length === 0 && domainQuestions.length > 0) {
+        // If no missed questions but there are domain questions, automatically switch to all questions
+        console.log('🎯 DomainSelector: Auto-switching to all questions since no missed questions found');
+        const allFilteredQuestions = domainQuestions;
+        
+        if (allFilteredQuestions.length > 0) {
+          console.log('🎯 DomainSelector: Starting practice with all questions:', {
+            selectedDomain,
+            filterType: 'all',
+            filteredQuestionsCount: allFilteredQuestions.length
+          });
+          
+          // Pass the filter type to the parent
+          onDomainSelect([selectedDomain], allFilteredQuestions, 'all');
+          return;
+        }
+      }
+      
+      alert(`No questions available for "${selectedDomain}" with the selected filter.\n\nTry selecting a different domain or filter type.`);
       return;
     }
 
