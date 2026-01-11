@@ -751,16 +751,19 @@ const DailyDrills = ({ questions }) => {
     resetPractice();
   };
   const completeSession = () => {
-    if (canCompleteSession) {
-      setShowCelebration(true);
-      // Update score stats when session is completed
-      updateScoreStats(summary.correct, summary.attempted);
-      updateDailyProgress(summary.attempted);
-      
-      // Update progress streaks
-      const accuracy = summary.attempted > 0 ? Math.round((summary.correct / summary.attempted) * 100) : 0;
-      updateProgressStreaks(summary.attempted, accuracy);
-    }
+    // Show celebration for any completion
+    setShowCelebration(true);
+    
+    // Update score stats when session is completed
+    updateScoreStats(summary.correct, summary.attempted);
+    updateDailyProgress(summary.attempted);
+    
+    // Update progress streaks
+    const accuracy = summary.attempted > 0 ? Math.round((summary.correct / summary.attempted) * 100) : 0;
+    updateProgressStreaks(summary.attempted, accuracy);
+    
+    // Clear any session checkpoint since we're completing
+    localStorage.removeItem('cmmcDrillCheckpoint');
   };
   
   // Start focused session on specific domain
