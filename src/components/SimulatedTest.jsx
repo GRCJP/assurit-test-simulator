@@ -28,25 +28,25 @@ const shuffleChoices = (choices) => {
 const SimulatedTest = ({ questions }) => {
   const { 
     darkMode, 
-    setMode, 
+    textSize, 
     simulatedOrder, 
-    simulatedIndex, 
-    setSimulatedIndex,
     simulatedAnswers, 
-    setSimulatedAnswers,
-    simulatedTimeRemaining,
-    setSimulatedTimeRemaining,
-    simulatedTimerActive,
-    setSimulatedTimerActive,
-    completeTest,
-    markedQuestions,
-    markQuestion,
-    missedQuestions,
-    addToMissed,
-    recordAttempt,
-    questionBankId,
-    startSimulatedTest,
-    textSize
+    setSimulatedAnswers, 
+    simulatedIndex, 
+    setSimulatedIndex, 
+    simulatedTimeRemaining, 
+    setSimulatedTimeRemaining, 
+    simulatedTimerActive, 
+    setSimulatedTimerActive, 
+    testCompleted, 
+    completeTest, 
+    startSimulatedTest, 
+    resetSimulatedTest, 
+    recordAttempt, 
+    missedQuestions, 
+    markExamSimQuestion, 
+    examSimMarkedQuestions, 
+    setMode 
   } = useTestMode();
   
   // Use persistent timer state from context
@@ -75,7 +75,7 @@ const SimulatedTest = ({ questions }) => {
   }, [simulatedOrder, simulatedIndex]);
   const hasQuestions = simulatedOrder && simulatedOrder.length > 0;
   const selectedAnswer = currentQuestion ? simulatedAnswers[currentQuestion?.id] : null;
-  const isMarked = currentQuestion ? markedQuestions.has(currentQuestion?.id) : false;
+  const isMarked = currentQuestion ? examSimMarkedQuestions.has(currentQuestion?.id) : false;
 
   // Use ref to store shuffled choices and prevent re-shuffling
   const shuffledChoicesRef = useRef([]);
@@ -166,7 +166,7 @@ const SimulatedTest = ({ questions }) => {
   
   // Handle mark for review
   const handleMarkReview = () => {
-    markQuestion(currentQuestion.id, selectedAnswer);
+    markExamSimQuestion(currentQuestion.id, selectedAnswer);
   };
   
   // Quick jump to question
@@ -802,7 +802,7 @@ const SimulatedTest = ({ questions }) => {
               <button
                 onClick={() => {
                   if (simulatedOrder[simulatedIndex]?.id) {
-                    markQuestion(simulatedOrder[simulatedIndex].id);
+                    markExamSimQuestion(simulatedOrder[simulatedIndex].id);
                   }
                 }}
                 className={`p-3 rounded-xl transition-all ${

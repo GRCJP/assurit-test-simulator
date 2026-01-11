@@ -300,22 +300,6 @@ const ExamFocusedDashboard = ({ questions: questionsProp }) => {
               </button>
               
               <button
-                onClick={() => setMode('missedCoach')}
-                disabled={missedQueue.length === 0}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                  missedQueue.length === 0
-                    ? darkMode 
-                      ? 'bg-gray-700/50 text-gray-500 cursor-not-allowed' 
-                      : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : darkMode
-                      ? 'bg-orange-600/10 text-orange-400 hover:bg-orange-600/20 border border-orange-500/30'
-                      : 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200'
-                }`}
-              >
-                Missed Coach ({missedQueue.length})
-              </button>
-              
-              <button
                 onClick={() => setMode('practice')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   darkMode

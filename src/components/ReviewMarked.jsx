@@ -2,15 +2,18 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 
 const ReviewMarked = ({ questions, onClose, examMode = false }) => {
-  const { textSize, darkMode, markedQuestions, markQuestion } = useTestMode();
+  const { textSize, darkMode, markedQuestions, examSimMarkedQuestions, markQuestion } = useTestMode();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [showExplanation, setShowExplanation] = useState(false);
 
+  // Use examSimMarkedQuestions for global review marked, markedQuestions for exam mode
+  const markedQuestionsToUse = examMode ? markedQuestions : examSimMarkedQuestions;
+  
   // Get the actual marked questions from the full questions list
   // Memoize to prevent excessive re-filtering on every render
   const markedQuestionsList = useMemo(() => {
-    return questions.filter(q => markedQuestions.has(q.id));
-  }, [questions, markedQuestions]);
+    return questions.filter(q => markedQuestionsToUse.has(q.id));
+  }, [questions, markedQuestionsToUse]);
 
   const handleNext = useCallback(() => {
     if (currentQuestion < markedQuestionsList.length - 1) {
@@ -121,7 +124,7 @@ const ReviewMarked = ({ questions, onClose, examMode = false }) => {
                   <button
                     onClick={() => {
                       // Clear all marked questions
-                      markedQuestions.forEach(id => markQuestion(id));
+                      markedQuestionsToUse.forEach(id => markQuestion(id));
                       // Then go back to practice
                       if (onClose) {
                         onClose();
@@ -153,12 +156,12 @@ const ReviewMarked = ({ questions, onClose, examMode = false }) => {
                 }
               }}
               className={`px-3 py-1 rounded text-sm ${
-                markedQuestions.has(q?.id)
+                markedQuestionsToUse.has(q?.id)
                   ? 'bg-yellow-500 text-white'
                   : darkMode ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              {markedQuestions.has(q?.id) ? 'Unmark' : 'Mark'}
+              {markedQuestionsToUse.has(q?.id) ? 'Unmark' : 'Mark'}
             </button>
           </div>
           

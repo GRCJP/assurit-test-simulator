@@ -6,7 +6,6 @@ import SimulatedTest from './components/SimulatedTest';
 import RapidMemory from './components/RapidMemory';
 import CheatSheet from './components/CheatSheet';
 import ReviewMissed from './components/ReviewMissed';
-import MissedCoach from './components/MissedCoach';
 import ReviewMarked from './components/ReviewMarked';
 import History from './components/History';
 import StudyPlanner from './components/StudyPlanner';
@@ -504,7 +503,6 @@ function AppContent({ userEmail, onLogout }) {
             {mode === 'rapidMemory' && <RapidMemory questions={questions} />}
             {mode === 'cheatSheet' && <CheatSheet questions={questions} />}
             {mode === 'reviewMissed' && <ReviewMissed questions={questions} />}
-            {mode === 'missedCoach' && <MissedCoach questions={questions} />}
             {mode === 'reviewMarked' && <ReviewMarked questions={questions} />}
             {mode === 'history' && <History questions={questions} />}
           </>

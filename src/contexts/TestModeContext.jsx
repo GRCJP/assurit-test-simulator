@@ -229,7 +229,7 @@ export const TestModeProvider = ({ children }) => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const urlMode = urlParams.get('mode');
-      if (urlMode && ['practice', 'dailyDrills', 'simulated', 'rapidMemory', 'history', 'studyPlanner', 'performance', 'cheatSheet', 'reviewMissed', 'reviewMarked', 'missedCoach'].includes(urlMode)) {
+      if (urlMode && ['practice', 'dailyDrills', 'simulated', 'rapidMemory', 'history', 'studyPlanner', 'performance', 'cheatSheet', 'reviewMissed', 'reviewMarked'].includes(urlMode)) {
         return urlMode;
       }
       return localStorage.getItem('mode') || 'dashboard';
@@ -387,6 +387,7 @@ export const TestModeProvider = ({ children }) => {
     return {};
   });
   const [markedQuestions, setMarkedQuestions] = useState(new Map());
+  const [examSimMarkedQuestions, setExamSimMarkedQuestions] = useState(new Map());
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [practiceAnswers, setPracticeAnswers] = useState([]);
   const [dailyDrillIndex, setDailyDrillIndex] = useState(0);
@@ -568,6 +569,7 @@ export const TestModeProvider = ({ children }) => {
       if (backupData.studyPlan) setStudyPlan(backupData.studyPlan);
       if (backupData.missedQuestions) setMissedQuestions(backupData.missedQuestions);
       if (backupData.markedQuestions) setMarkedQuestions(backupData.markedQuestions);
+      if (backupData.examSimMarkedQuestions) setExamSimMarkedQuestions(backupData.examSimMarkedQuestions);
       if (backupData.testHistory) setTestHistory(backupData.testHistory);
       if (backupData.domainMastery) setDomainMastery(backupData.domainMastery);
       if (backupData.questionStats) setQuestionStats(backupData.questionStats);
@@ -614,6 +616,7 @@ export const TestModeProvider = ({ children }) => {
       studyPlan,
       missedQuestions: Array.from(missedQuestions),
       markedQuestions: Array.from(markedQuestions.entries()),
+      examSimMarkedQuestions: Array.from(examSimMarkedQuestions.entries()),
       simulatedAnswers,
       testHistory,
       domainMastery,
@@ -629,7 +632,7 @@ export const TestModeProvider = ({ children }) => {
         lastStudyDate: localStorage.getItem('lastStudyDate'),
       }
     };
-  }, [isAuthenticated, userId, questionBankId, progressStreaks, scoreStats, studyPlan, missedQuestions, markedQuestions, simulatedAnswers, testHistory, domainMastery, questionStats, spacedRepetition, adaptiveDifficulty, darkMode, autoDarkMode, textSize, mode]);
+  }, [isAuthenticated, userId, questionBankId, progressStreaks, scoreStats, studyPlan, missedQuestions, markedQuestions, examSimMarkedQuestions, simulatedAnswers, testHistory, domainMastery, questionStats, spacedRepetition, adaptiveDifficulty, darkMode, autoDarkMode, textSize, mode]);
 
   const startAutoBackup = useCallback((intervalMs = backupInterval) => {
     if (autoBackup.current && isBackupEnabled) {
@@ -673,6 +676,7 @@ export const TestModeProvider = ({ children }) => {
         questionStatsRemote,
         missedQuestionsRemote,
         markedQuestionsRemote,
+        examSimMarkedQuestionsRemote,
         simulatedAnswersRemote,
         testHistoryRemote,
         spacedRepetitionRemote,
@@ -688,6 +692,7 @@ export const TestModeProvider = ({ children }) => {
         getUserData(supabaseUserId, questionBankId, 'questionStats'),
         getUserData(supabaseUserId, questionBankId, 'missedQuestions'),
         getUserData(supabaseUserId, questionBankId, 'markedQuestions'),
+        getUserData(supabaseUserId, questionBankId, 'examSimMarkedQuestions'),
         getUserData(supabaseUserId, questionBankId, 'simulatedAnswers'),
         getUserData(supabaseUserId, questionBankId, 'testHistory'),
         getUserData(supabaseUserId, questionBankId, 'spacedRepetition'),
@@ -770,6 +775,11 @@ export const TestModeProvider = ({ children }) => {
 
       if (isValidData(markedQuestionsRemote)) {
         setMarkedQuestions(new Map(normalizeRestoredData(markedQuestionsRemote, 'markedQuestions')));
+        dataUpdated = true;
+      }
+
+      if (isValidData(examSimMarkedQuestionsRemote)) {
+        setExamSimMarkedQuestions(new Map(normalizeRestoredData(examSimMarkedQuestionsRemote, 'examSimMarkedQuestions')));
         dataUpdated = true;
       }
 
@@ -908,7 +918,7 @@ export const TestModeProvider = ({ children }) => {
     // Only use enhanced URL routing if feature flag is enabled
     if (isFeatureEnabled('dashboardPersistence')) {
       // If URL has a valid mode, use it; otherwise default to dashboard
-      if (urlMode && ['practice', 'dailyDrills', 'simulated', 'rapidMemory', 'history', 'studyPlanner', 'performance', 'cheatSheet', 'reviewMissed', 'reviewMarked', 'missedCoach'].includes(urlMode)) {
+      if (urlMode && ['practice', 'dailyDrills', 'simulated', 'rapidMemory', 'history', 'studyPlanner', 'performance', 'cheatSheet', 'reviewMissed', 'reviewMarked'].includes(urlMode)) {
         console.log('✅ Using URL mode:', urlMode);
         setModeWithPersistence(urlMode);
       } else {
@@ -1229,6 +1239,7 @@ export const TestModeProvider = ({ children }) => {
       const savedMissedQueue = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'missedQueue')) || '[]');
       const savedMissedMeta = JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'missedMeta')) || '{}');
       const savedMarked = new Map(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'markedQuestions')) || '[]'));
+      const savedExamSimMarked = new Map(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'examSimMarkedQuestions')) || '[]'));
       const savedPracticeIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'practiceIndex')) || '0');
       const savedPracticeAnswers = normalizeRestoredData(JSON.parse(localStorage.getItem(keyForBank(questionBankId, 'practiceAnswers')) || '[]'), 'practiceAnswers');
       const savedDailyDrillIndex = parseInt(localStorage.getItem(keyForBank(questionBankId, 'dailyDrillIndex')) || '0');
@@ -1262,6 +1273,7 @@ export const TestModeProvider = ({ children }) => {
       setMissedQueue(savedMissedQueue);
       setMissedMeta(savedMissedMeta);
       setMarkedQuestions(savedMarked);
+      setExamSimMarkedQuestions(savedExamSimMarked);
       setPracticeIndex(savedPracticeIndex);
       setPracticeAnswers(savedPracticeAnswers);
       setDailyDrillIndex(Number.isFinite(savedDailyDrillIndex) ? savedDailyDrillIndex : 0);
@@ -1361,6 +1373,12 @@ export const TestModeProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem(keyForBank(questionBankId, 'markedQuestions'), JSON.stringify([...markedQuestions]));
   }, [markedQuestions, questionBankId]);
+
+  useEffect(() => {
+    localStorage.setItem(keyForBank(questionBankId, 'examSimMarkedQuestions'), JSON.stringify([...examSimMarkedQuestions]));
+    // Sync to cloud if authenticated
+    syncDataToCloud('examSimMarkedQuestions', [...examSimMarkedQuestions]);
+  }, [examSimMarkedQuestions, questionBankId, syncDataToCloud]);
 
   useEffect(() => {
     localStorage.setItem('mode', mode);
@@ -1479,6 +1497,20 @@ export const TestModeProvider = ({ children }) => {
       }
       return newMap;
     });
+  };
+
+  const markExamSimQuestion = (questionId, selectedAnswer = null) => {
+    setExamSimMarkedQuestions(prev => {
+      const newMap = new Map(prev);
+      if (newMap.has(questionId)) {
+        newMap.delete(questionId);
+      } else {
+        newMap.set(questionId, selectedAnswer);
+      }
+      return newMap;
+    });
+    // Also update the general markedQuestions for backward compatibility
+    markQuestion(questionId, selectedAnswer);
   };
 
   const addToMissed = (question) => {
@@ -2024,7 +2056,7 @@ export const TestModeProvider = ({ children }) => {
     updateDomainMastery(domainKey, isCorrect);
     
     // Handle missed questions (only for practice modes, not reviews)
-    if (!isCorrect && mode !== 'reviewMissed' && mode !== 'missedCoach') {
+    if (!isCorrect && mode !== 'reviewMissed') {
       addToMissed(question);
       addToSpacedRepetition(question);
     }
@@ -2962,6 +2994,8 @@ export const TestModeProvider = ({ children }) => {
     removeFromMissed,
     markedQuestions,
     markQuestion,
+    markExamSimQuestion,
+    examSimMarkedQuestions,
     simulatedAnswers,
     setSimulatedAnswers,
     simulatedTimeRemaining,
