@@ -2,28 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTestMode } from '../contexts/TestModeContext';
 import { ArrowLeft, ArrowRight, Target, CheckCircle, XCircle } from 'lucide-react';
 
-// Fisher-Yates shuffle algorithm for better randomization
-const shuffle = (arr) => {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = a[i];
-    a[i] = a[j];
-    a[j] = temp;
-  }
-  return a;
-};
-
-// Shuffle answer choices for better memorization
-const shuffleChoices = (choices) => {
-  if (!choices || !Array.isArray(choices)) return [];
-  
-  // Create array with choices and their original positions for consistent letter mapping
-  const shuffled = shuffle(choices.map((choice, originalIndex) => ({ ...choice, originalIndex })));
-  
-  return shuffled;
-};
-
 const DomainPractice = () => {
   console.log('🎯 DomainPractice COMPONENT MOUNTED! Mode:', mode);
   
@@ -59,19 +37,6 @@ const DomainPractice = () => {
     hasCurrentQuestion: !!currentQuestion,
     sessionComplete
   });
-
-  // Memoize shuffled choices to prevent re-shuffling on every render
-  const shuffledChoicesRef = useRef([]);
-  
-  // Only shuffle when question ID actually changes
-  useEffect(() => {
-    if (currentQuestion?.id !== shuffledChoicesRef.current.questionId) {
-      shuffledChoicesRef.current = currentQuestion?.choices ? shuffleChoices(currentQuestion.choices) : [];
-      shuffledChoicesRef.current.questionId = currentQuestion?.id;
-    }
-  }, [currentQuestion?.id]);
-  
-  const shuffledChoices = shuffledChoicesRef.current;
 
   // Calculate session statistics
   const sessionStats = {
@@ -313,7 +278,7 @@ const DomainPractice = () => {
 
           {/* Answer Choices */}
           <div className="space-y-3 mb-6">
-            {shuffledChoices.map((choice) => {
+            {currentQuestion.choices?.map((choice) => {
               const isSelected = currentAnswer.selectedChoiceId === choice.id;
               const isCorrect = choice.correct;
               
