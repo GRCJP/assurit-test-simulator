@@ -1,6 +1,6 @@
-# CMMC Test Simulator
+# GRC Professional Learning Platform
 
-A simple web app for CMMC exam preparation.
+A comprehensive learning solution designed for **GRC engineers and compliance professionals** to master complex frameworks through intelligent study methods and adaptive learning technology.
 
 ![CMMC Test Simulator](screenshots/main_screen.png)
 
