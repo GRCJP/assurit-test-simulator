@@ -1,6 +1,6 @@
 {
-  "name": "GRC Professional Learning Platform",
-  "short_name": "GRC Learning",
+  "name": "GRC Test Simulator",
+  "short_name": "GRC Test Prep",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
