@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Test preparation platform for cybersecurity and GRC certification exams - convert PDF question banks into interactive practice tests",
+  "description": "Test preparation platform for cybersecurity and GRC certification exams - convert your questions into interactive practice tests",
     "repository": {
     "type": "git",
     "url": "https://github.com/GRCJP/assurit-test-simulator.git"
