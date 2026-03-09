@@ -4,8 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "description": "CMMC exam preparation tool with 206 practice questions",
-  "homepage": "https://grcjp.github.io/assurit-test-simulator",
-  "repository": {
+    "repository": {
     "type": "git",
     "url": "https://github.com/GRCJP/assurit-test-simulator.git"
   },

@@ -411,7 +411,7 @@ function App() {
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-gray-800 border border-gray-700 rounded-xl p-6">
-          <h1 className="text-2xl font-bold">CMMC Mastery</h1>
+          <h1 className="text-2xl font-bold">GRC Professional Learning Platform</h1>
           <p className="mt-2 text-sm text-gray-300">
             Please sign in to access the study app.
           </p>

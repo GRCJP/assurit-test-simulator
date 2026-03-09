@@ -179,7 +179,7 @@ const PracticeMode = ({ questions }) => {
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className={`text-2xl font-semibold ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-              CMMC Mastery
+              GRC Professional Learning Platform
             </h1>
             <p className={`mt-1 text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Practice mode: choose an answer to see if it's correct, then click Next to remove correctly answered questions!
