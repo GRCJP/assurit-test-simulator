@@ -47,15 +47,19 @@ This platform was created to solve the **GRC learning challenge** - transforming
 ## 📸 Platform Screenshots
 
 ### Dashboard View
+![Dashboard](screenshots/dashboard.png)
 Main interface showing Today's Mission, daily drills, study plan, and domain-specific practice areas with progress tracking.
 
 ### Practice Mode  
+![Practice Mode](screenshots/practice-mode.png)
 Interactive question review with immediate feedback and detailed explanations for comprehensive learning.
 
 ### Exam Simulation
+![Simulated Exam](screenshots/simulated-exam.png)
 Full test environment with timer, navigation, and comprehensive review functionality for realistic exam preparation.
 
 ### Analytics Dashboard
+![Analytics](screenshots/analytics.png)
 Performance metrics, knowledge gap analysis, and progress tracking across all domains for data-driven improvement.
 
 *Note: Screenshots demonstrate the platform interface with sample content. Actual question banks are private and customizable.*
