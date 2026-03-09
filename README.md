@@ -2,8 +2,6 @@
 
 A comprehensive learning solution designed for **GRC engineers and compliance professionals** to master complex frameworks through intelligent study methods and adaptive learning technology.
 
-![Dashboard View](screenshots/dashboard.png)
-
 ## 🎯 Purpose & Learning Engine
 
 This platform was created to solve the **GRC learning challenge** - transforming complex regulatory frameworks into manageable, retainable knowledge. 
@@ -49,20 +47,16 @@ This platform was created to solve the **GRC learning challenge** - transforming
 ## 📸 Platform Screenshots
 
 ### Dashboard View
-![Dashboard](screenshots/dashboard.png)
-Main interface showing Today's Mission, daily drills, study plan, and domain-specific practice areas.
+Main interface showing Today's Mission, daily drills, study plan, and domain-specific practice areas with progress tracking.
 
 ### Practice Mode  
-![Practice Mode](screenshots/practice-mode.png)
-Interactive question review with immediate feedback and detailed explanations.
+Interactive question review with immediate feedback and detailed explanations for comprehensive learning.
 
 ### Exam Simulation
-![Simulated Exam](screenshots/simulated-exam.png)
-Full test environment with timer, navigation, and comprehensive review functionality.
+Full test environment with timer, navigation, and comprehensive review functionality for realistic exam preparation.
 
 ### Analytics Dashboard
-![Analytics](screenshots/analytics.png)
-Performance metrics, knowledge gap analysis, and progress tracking across all domains.
+Performance metrics, knowledge gap analysis, and progress tracking across all domains for data-driven improvement.
 
 *Note: Screenshots demonstrate the platform interface with sample content. Actual question banks are private and customizable.*
 
