@@ -1,6 +1,6 @@
 {
-  "name": "CMMC CCP Test Bank",
-  "short_name": "CMMC Test Bank",
+  "name": "GRC Professional Learning Platform",
+  "short_name": "GRC Learning",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
